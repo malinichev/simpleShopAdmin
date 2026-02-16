@@ -1,0 +1,11 @@
+export { categoriesApi } from './api/categoriesApi';
+export { categoryKeys } from './api/queries';
+export { useCategoryTree, useCategoriesFlat } from './model/useCategories';
+export { useCreateCategory } from './model/useCreateCategory';
+export { useUpdateCategory } from './model/useUpdateCategory';
+export { useDeleteCategory } from './model/useDeleteCategory';
+export { useReorderCategories } from './model/useReorderCategories';
+export { useMoveCategory } from './model/useMoveCategory';
+export { categorySchema, type CategoryFormData } from './lib/categoryValidation';
+export { CategoryTree, type ReorderItem, type MoveItem } from './ui/CategoryTree';
+export { CategoryForm } from './ui/CategoryForm';
