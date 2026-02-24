@@ -116,7 +116,19 @@ export function PageEditPage() {
   });
 
   const handleCopyUrl = useCallback((url: string) => {
-    navigator.clipboard.writeText(url).then(() => toast.success('URL скопирован'));
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => toast.success('URL скопирован'));
+    } else {
+      const el = document.createElement('textarea');
+      el.value = url;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      toast.success('URL скопирован');
+    }
   }, []);
 
   const handleDeleteFileConfirm = useCallback(() => {
