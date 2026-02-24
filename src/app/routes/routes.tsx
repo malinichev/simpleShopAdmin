@@ -47,6 +47,12 @@ const VerifyEmail = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('@/pages/not-found').then((m) => ({ default: m.NotFoundPage })),
 );
+const PagesPage = lazy(() =>
+  import('@/pages/pages').then((m) => ({ default: m.PagesPage })),
+);
+const PageEditPage = lazy(() =>
+  import('@/pages/page-edit').then((m) => ({ default: m.PageEditPage })),
+);
 
 function PageLoader() {
   return (
@@ -77,6 +83,8 @@ export function AppRoutes() {
             <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
             <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
+            <Route path={ROUTES.PAGES} element={<PagesPage />} />
+            <Route path={ROUTES.PAGE_EDIT} element={<PageEditPage />} />
           </Route>
         </Route>
 

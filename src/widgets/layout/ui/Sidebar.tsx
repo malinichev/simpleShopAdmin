@@ -9,6 +9,7 @@ import {
   Tag,
   BarChart3,
   Settings,
+  FileText,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -26,6 +27,7 @@ const navItems = [
   { path: ROUTES.REVIEWS, label: 'Отзывы', icon: MessageSquare },
   { path: ROUTES.PROMOTIONS, label: 'Промоакции', icon: Tag },
   { path: ROUTES.ANALYTICS, label: 'Аналитика', icon: BarChart3 },
+  { path: ROUTES.PAGES, label: 'Страницы', icon: FileText },
   { path: ROUTES.SETTINGS, label: 'Настройки', icon: Settings },
 ] as const;
 

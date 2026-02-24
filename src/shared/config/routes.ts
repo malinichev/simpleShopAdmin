@@ -13,6 +13,8 @@ export const ROUTES = {
   ANALYTICS: '/analytics',
   SETTINGS: '/settings',
   VERIFY_EMAIL: '/verify-email',
+  PAGES: '/pages',
+  PAGE_EDIT: '/pages/:slug/edit',
 } as const;
 
 export const buildProductEditPath = (id: string): string =>
@@ -20,3 +22,6 @@ export const buildProductEditPath = (id: string): string =>
 
 export const buildOrderDetailPath = (id: string): string =>
   ROUTES.ORDER_DETAIL.replace(':id', id);
+
+export const buildPageEditPath = (slug: string): string =>
+  ROUTES.PAGE_EDIT.replace(':slug', slug);
