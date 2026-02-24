@@ -41,7 +41,9 @@ export function setupInterceptors(): void {
         _retry?: boolean;
       };
 
-      if (error.response?.status !== 401 || originalRequest._retry) {
+      const isRefreshRequest = originalRequest.url?.includes('/auth/refresh');
+
+      if (error.response?.status !== 401 || originalRequest._retry || isRefreshRequest) {
         return Promise.reject(error);
       }
 
