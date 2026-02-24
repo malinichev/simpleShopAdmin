@@ -3,14 +3,13 @@ import { toast } from 'sonner';
 import { pagesApi } from '../api/pagesApi';
 import { pageKeys } from '../api/queries';
 
-export function useUploadPageFile(slug: string) {
+export function useUploadPageFile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (file: File) => pagesApi.uploadPageFile(slug, file),
-    onSuccess: (updatedPage) => {
-      queryClient.setQueryData(pageKeys.detail(slug), updatedPage);
-      queryClient.invalidateQueries({ queryKey: pageKeys.lists() });
+    mutationFn: (file: File) => pagesApi.uploadPageFile(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pageKeys.files() });
       toast.success('Файл загружен');
     },
     onError: () => {

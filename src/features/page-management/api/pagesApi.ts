@@ -1,5 +1,5 @@
 import { api } from '@/shared/api';
-import type { Page } from '@/entities/page';
+import type { Page, PageFile } from '@/entities/page';
 
 export interface CreatePagePayload {
   slug: string;
@@ -13,6 +13,8 @@ export interface CreatePagePayload {
 export type UpdatePagePayload = Partial<CreatePagePayload>;
 
 export const pagesApi = {
+  // --- Pages ---
+
   getPages: async (): Promise<Page[]> => {
     const { data } = await api.get<Page[]>('/pages');
     return data;
@@ -22,7 +24,6 @@ export const pagesApi = {
     const { data } = await api.get<Page>(`/pages/admin/${slug}`);
     return data;
   },
-
 
   createPage: async (payload: CreatePagePayload): Promise<Page> => {
     const { data } = await api.post<Page>('/pages', payload);
@@ -38,19 +39,23 @@ export const pagesApi = {
     await api.delete(`/pages/${slug}`);
   },
 
-  uploadPageFile: async (slug: string, file: File): Promise<Page> => {
+  // --- Global page files ---
+
+  getPageFiles: async (): Promise<PageFile[]> => {
+    const { data } = await api.get<PageFile[]>('/pages/files');
+    return data;
+  },
+
+  uploadPageFile: async (file: File): Promise<PageFile> => {
     const formData = new FormData();
     formData.append('file', file);
-    const { data } = await api.post<Page>(`/pages/${slug}/files`, formData, {
+    const { data } = await api.post<PageFile>('/pages/files', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
   },
 
-  deletePageFile: async (slug: string, key: string): Promise<Page> => {
-    const { data } = await api.delete<Page>(`/pages/${slug}/files`, {
-      params: { key },
-    });
-    return data;
+  deletePageFile: async (key: string): Promise<void> => {
+    await api.delete('/pages/files', { params: { key } });
   },
 };

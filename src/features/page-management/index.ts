@@ -2,6 +2,7 @@ export { pagesApi } from './api/pagesApi';
 export { pageKeys } from './api/queries';
 export { usePages } from './model/usePages';
 export { usePage } from './model/usePage';
+export { usePageFiles } from './model/usePageFiles';
 export { useCreatePage } from './model/useCreatePage';
 export { useUpdatePage } from './model/useUpdatePage';
 export { useDeletePage } from './model/useDeletePage';

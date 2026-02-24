@@ -1,10 +1,11 @@
 export interface PageFile {
+  _id: string;
   key: string;
   url: string;
   name: string;
   size: number;
   mimeType: string;
-  uploadedAt: string;
+  createdAt: string;
 }
 
 export interface Page {
@@ -14,7 +15,6 @@ export interface Page {
   metaTitle?: string;
   metaDescription?: string;
   content: object;
-  files: PageFile[];
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;

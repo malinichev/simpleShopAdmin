@@ -23,13 +23,14 @@ import { formatDateTime } from '@/shared/lib/utils/date';
 import type { PageFile } from '@/entities/page';
 import {
   usePage,
+  usePageFiles,
   useUpdatePage,
   useUploadPageFile,
   useDeletePageFile,
 } from '@/features/page-management';
 import { ROUTES } from '@/shared/config';
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -48,10 +49,11 @@ export function PageEditPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const { data: page, isLoading } = usePage(slug ?? '');
+  const { data: page, isLoading: pageLoading } = usePage(slug ?? '');
+  const { data: files, isLoading: filesLoading } = usePageFiles();
   const updatePage = useUpdatePage();
-  const uploadFile = useUploadPageFile(slug ?? '');
-  const deleteFile = useDeletePageFile(slug ?? '');
+  const uploadFile = useUploadPageFile();
+  const deleteFile = useDeletePageFile();
 
   const [title, setTitle] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
@@ -61,7 +63,6 @@ export function PageEditPage() {
   const [initialized, setInitialized] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<PageFile | null>(null);
 
-  // Initialize form from loaded page (once)
   if (page && !initialized) {
     setTitle(page.title);
     setMetaTitle(page.metaTitle ?? '');
@@ -79,7 +80,6 @@ export function PageEditPage() {
       toast.error('JSON невалиден. Исправьте ошибки перед сохранением.');
       return;
     }
-
     updatePage.mutate({
       slug: slug ?? '',
       data: {
@@ -116,9 +116,7 @@ export function PageEditPage() {
   });
 
   const handleCopyUrl = useCallback((url: string) => {
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success('URL скопирован');
-    });
+    navigator.clipboard.writeText(url).then(() => toast.success('URL скопирован'));
   }, []);
 
   const handleDeleteFileConfirm = useCallback(() => {
@@ -129,7 +127,7 @@ export function PageEditPage() {
     }
   }, [fileToDelete, deleteFile]);
 
-  if (isLoading) {
+  if (pageLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
@@ -152,8 +150,6 @@ export function PageEditPage() {
     );
   }
 
-  const files = page.files ?? [];
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -167,9 +163,7 @@ export function PageEditPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {page.title}
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{page.title}</h1>
             <p className="text-sm text-gray-500">/{page.slug}</p>
           </div>
         </div>
@@ -179,11 +173,11 @@ export function PageEditPage() {
         </Button>
       </div>
 
-      {/* Content grid */}
+      {/* Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left column */}
+        {/* Left */}
         <div className="space-y-6">
-          {/* Metadata card */}
+          {/* Metadata */}
           <Card>
             <CardHeader>
               <CardTitle>Метаданные</CardTitle>
@@ -199,11 +193,7 @@ export function PageEditPage() {
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Название <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="О нас"
-                />
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="О нас" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -212,7 +202,7 @@ export function PageEditPage() {
                 <Input
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder="Заголовок страницы для SEO"
+                  placeholder="Заголовок для SEO"
                 />
               </div>
               <div>
@@ -222,23 +212,16 @@ export function PageEditPage() {
                 <Textarea
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
-                  placeholder="Описание страницы для SEO"
+                  placeholder="Описание для SEO"
                   rows={3}
                 />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Опубликовано
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    GET /api/pages/{page.slug}
-                  </p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Опубликовано</p>
+                  <p className="text-xs text-gray-500">GET /api/pages/{page.slug}</p>
                 </div>
-                <Switch
-                  checked={isPublished}
-                  onCheckedChange={setIsPublished}
-                />
+                <Switch checked={isPublished} onCheckedChange={setIsPublished} />
               </div>
             </CardContent>
           </Card>
@@ -270,11 +253,16 @@ export function PageEditPage() {
           </Card>
         </div>
 
-        {/* Right column — Files */}
+        {/* Right — Global files */}
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>Файлы</CardTitle>
+              <CardTitle>
+                Файлы
+                <span className="ml-2 text-xs font-normal text-gray-400">
+                  (общий список для всех страниц)
+                </span>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Dropzone */}
@@ -289,28 +277,28 @@ export function PageEditPage() {
                 <input {...getInputProps()} />
                 <Upload className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  {isDragActive
-                    ? 'Отпустите файл...'
-                    : 'Перетащите или нажмите для загрузки'}
+                  {isDragActive ? 'Отпустите файл...' : 'Перетащите или нажмите для загрузки'}
                 </p>
-                <p className="mt-1 text-xs text-gray-400">
-                  Изображения, PDF · Макс. 20MB
-                </p>
+                <p className="mt-1 text-xs text-gray-400">Изображения, PDF · Макс. 20MB</p>
                 {uploadFile.isPending && (
                   <p className="mt-2 text-xs text-primary-500">Загрузка...</p>
                 )}
               </div>
 
               {/* File list */}
-              {files.length === 0 ? (
-                <p className="py-4 text-center text-sm text-gray-400">
-                  Нет загруженных файлов
-                </p>
+              {filesLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : !files || files.length === 0 ? (
+                <p className="py-4 text-center text-sm text-gray-400">Нет загруженных файлов</p>
               ) : (
-                <ul className="space-y-2">
+                <ul className="max-h-[600px] space-y-2 overflow-y-auto">
                   {files.map((file) => (
                     <li
-                      key={file.key}
+                      key={file._id}
                       className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
                     >
                       <FileIcon mimeType={file.mimeType} />
@@ -319,7 +307,7 @@ export function PageEditPage() {
                           {file.name}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {formatBytes(file.size)} · {formatDateTime(file.uploadedAt)}
+                          {formatBytes(file.size)} · {formatDateTime(file.createdAt)}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
@@ -353,7 +341,7 @@ export function PageEditPage() {
       <ConfirmDialog
         open={fileToDelete !== null}
         title="Удалить файл?"
-        description={`Файл "${fileToDelete?.name}" будет удалён из хранилища.`}
+        description={`Файл "${fileToDelete?.name}" будет удалён из хранилища. Это может сломать страницы, использующие этот URL.`}
         confirmText="Удалить"
         variant="danger"
         loading={deleteFile.isPending}
