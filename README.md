@@ -1,73 +1,352 @@
-# React + TypeScript + Vite
+# Административная панель для интернет-магазина спортивной одежды
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Админка должна полностью интегрироваться с существующим API.
 
-Currently, two official plugins are available:
+## Функциональность по страницам
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Login Page (`/login`)
+- Форма входа (email, password)
+- Валидация полей
+- Сохранение токенов
+- Редирект на Dashboard после успешного входа
+- Обработка ошибок авторизации
 
-## React Compiler
+### Dashboard Page (`/`)
+- **Stats Cards (4 карточки):**
+    - Продажи за сегодня (сумма + процент изменения)
+    - Заказов за сегодня (количество + процент)
+    - Посетителей за сегодня (количество + процент)
+    - Средний чек (сумма + процент)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Sales Chart:**
+    - Линейный/столбчатый график продаж
+    - Переключатель периода: 7 дней / 30 дней / 12 месяцев
+    - Tooltip с детальной информацией
 
-## Expanding the ESLint configuration
+- **Recent Orders (5 последних):**
+    - Номер заказа
+    - Клиент
+    - Сумма
+    - Статус (badge)
+    - Дата
+    - Ссылка на просмотр
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Top Products (5 лучших):**
+    - Изображение
+    - Название
+    - Продано шт.
+    - Выручка
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Low Stock Alert:**
+    - Товары с остатком < 5 шт.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Products Page (`/products`)
+- **Toolbar:**
+    - Поиск по названию/SKU
+    - Фильтр по категории (select)
+    - Фильтр по статусу (select)
+    - Кнопка "Добавить товар"
+    - Кнопка экспорта
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
+- **Table (TanStack Table):**
+    - Checkbox для выбора
+    - Изображение (thumbnail)
+    - Название (ссылка на редактирование)
+    - SKU
+    - Категория
+    - Цена
+    - Остаток (суммарный по вариантам)
+    - Статус (badge)
+    - Действия (dropdown: редактировать, дублировать, удалить)
+
+- **Bulk Actions Bar (при выборе):**
+    - Удалить выбранные
+    - Изменить статус
+    - Изменить категорию
+
+- **Pagination:**
+    - Выбор количества на странице: 10, 20, 50
+    - Навигация по страницам
+
+### Product Edit Page (`/products/new`, `/products/:id/edit`)
+- **Tabs или секции:**
+
+**Основная информация:**
+- Название товара
+- Slug (auto-generate)
+- Краткое описание
+- Полное описание (TipTap rich editor)
+- SKU
+- Категория (select с поиском)
+- Теги (input с чипами)
+- Статус (draft/active/archived)
+
+**Цены:**
+- Базовая цена
+- Цена со скидкой (сравнительная)
+- Чекбокс "Цена за единицу по вариантам"
+
+**Варианты товара:**
+- Таблица вариантов
+- Добавление варианта: размер, цвет, SKU варианта, остаток, цена (опционально)
+- Drag-n-drop сортировка
+- Удаление варианта
+
+**Изображения:**
+- Drag-n-drop зона загрузки
+- Галерея с превью
+- Drag-n-drop сортировка
+- Установка главного изображения
+- Удаление изображения
+- Alt текст для каждого изображения
+
+**Атрибуты:**
+- Материал (input)
+- Тип активности (multi-select): yoga, running, gym, casual
+- Особенности (input с чипами)
+
+**SEO:**
+- Meta title
+- Meta description
+- Keywords (input с чипами)
+- Preview (как будет выглядеть в поиске)
+
+**Действия:**
+- Сохранить как черновик
+- Опубликовать
+- Отмена
+
+### Categories Page (`/categories`)
+- **Tree View:**
+    - Иерархическое отображение категорий
+    - Drag-n-drop для изменения порядка и вложенности
+    - Иконки expand/collapse
+
+- **Для каждой категории:**
+    - Название
+    - Количество товаров
+    - Статус (active/inactive)
+    - Действия: редактировать, добавить подкатегорию, удалить
+
+- **Modal создания/редактирования:**
+    - Название
+    - Slug
+    - Описание
+    - Родительская категория
+    - Изображение
+    - SEO настройки
+    - Статус
+
+### Orders Page (`/orders`)
+- **Filters:**
+    - Поиск по номеру/email
+    - Статус заказа (multi-select)
+    - Статус оплаты
+    - Период (date range picker)
+    - Сумма от/до
+
+- **Table:**
+    - Номер заказа (ссылка)
+    - Клиент (имя, email)
+    - Товаров (количество)
+    - Сумма
+    - Статус заказа (badge с цветом)
+    - Статус оплаты (badge)
+    - Дата
+    - Действия
+
+- **Quick Actions:**
+    - Изменить статус (inline)
+
+### Order Detail Page (`/orders/:id`)
+- **Header:**
+    - Номер заказа
+    - Статус (badge + dropdown для изменения)
+    - Дата создания
+    - Кнопка печати
+
+- **Customer Info:**
+    - Имя, email, телефон
+    - Ссылка на профиль клиента
+
+- **Shipping Address:**
+    - Полный адрес доставки
+
+- **Order Items:**
+    - Таблица товаров
+    - Изображение, название, вариант, цена, количество, сумма
+
+- **Order Summary:**
+    - Подытог
+    - Скидка (если есть промокод)
+    - Доставка
+    - Итого
+
+- **Timeline:**
+    - История изменений статуса
+    - Дата, статус, кто изменил, комментарий
+
+- **Notes:**
+    - Комментарий клиента
+    - Внутренний комментарий (редактируемый)
+
+### Customers Page (`/customers`)
+- **Table:**
+    - Имя
+    - Email
+    - Телефон
+    - Заказов (количество)
+    - Общая сумма покупок
+    - Дата регистрации
+    - Действия (просмотр, заказы)
+
+- **Customer Detail Modal:**
+    - Полная информация
+    - Список адресов
+    - История заказов
+
+### Страницы (`/pages`)
+- **Table:**
+    - SLUG
+    - НАЗВАНИЕ
+    - СТАТУС
+    - ОБНОВЛЕНО
+    - Действия (редактировать, удалить)
+
+### Редактирование страницы SLUG (`/pages/slug:/edit`)
+- **Cards Grid:**
+    - Метаданные (Slug, Название, Meta Title, Meta Description, Опубликовано(тумблер))
+    - JSON контент
+    - Файлы (изображение и файлы у которых можно скопировать путь и использовать в JSON контент)
+    - Текст отзыва
+    - Изображения отзыва (если есть)
+    - Дата
+    - Действия: Сохранить
+
+### Reviews Page (`/reviews`)
+- **Filters:**
+    - Статус: все / на модерации / одобренные
+    - Рейтинг: 1-5 звёзд
+    - Период
+
+- **Cards Grid:**
+    - Товар (изображение, название)
+    - Автор
+    - Рейтинг (звёзды)
+    - Текст отзыва
+    - Изображения отзыва (если есть)
+    - Дата
+    - Действия: одобрить, ответить, удалить
+
+- **Reply Modal:**
+    - Текст отзыва
+    - Поле для ответа
+
+### Promotions Page (`/promotions`)
+- **Table:**
+    - Код
+    - Название
+    - Тип (% / фикс / бесплатная доставка)
+    - Значение
+    - Использовано / Лимит
+    - Период действия
+    - Статус (active/inactive/expired)
+    - Действия
+
+- **Create/Edit Modal:**
+    - Код (auto-generate option)
+    - Название
+    - Описание
+    - Тип скидки
+    - Значение
+    - Мин. сумма заказа
+    - Макс. скидка (для %)
+    - Лимит использования
+    - Лимит на пользователя
+    - Применимо к категориям (multi-select)
+    - Применимо к товарам (multi-select с поиском)
+    - Исключить товары
+    - Даты начала/окончания
+    - Активен
+
+### Analytics Page (`/analytics`)
+- **Period Selector:**
+    - Сегодня / Вчера / 7 дней / 30 дней / Этот месяц / Прошлый месяц / Произвольный
+
+- **Overview Cards:**
+    - Выручка
+    - Заказы
+    - Средний чек
+    - Конверсия
+
+- **Sales Chart:**
+    - Выручка по дням
+    - Сравнение с предыдущим периодом
+
+- **Orders Chart:**
+    - Количество заказов по статусам (pie chart)
+
+- **Top Products Table:**
+    - Топ-10 по продажам
+
+- **Top Categories Chart:**
+    - Продажи по категориям (bar chart)
+
+- **Traffic Sources:**
+    - Источники трафика (pie chart)
+
+- **Export:**
+    - Скачать отчёт (PDF/Excel)
+
+### Settings Page (`/settings`)
+- **Tabs:**
+    - Общие настройки
+    - Доставка
+    - Оплата
+    - Email-уведомления
+    - Администраторы
+
+## Стилизация
+
+### Цветовая схема
+```typescript
+// tailwind.config.ts
+const colors = {
+  primary: {
+    50: '#f0fdf4',
+    100: '#dcfce7',
+    // ... до 900
+    DEFAULT: '#10b981', // emerald-500
   },
-])
+  // Используй Tailwind default palette для остальных
+};
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Требования
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Качество кода
+- TypeScript strict mode
+- ESLint + Prettier
+- Нет `any` типов
+- Все пропсы типизированы
+
+### UX
+- Loading states (Skeleton)
+- Error states с retry
+- Empty states
+- Optimistic updates где возможно
+- Confirm dialogs для удаления
+- Toast notifications
+- Debounced search
+- Responsive (но приоритет — desktop)
+
+### Performance
+- Code splitting по роутам
+- Lazy loading компонентов
+- Кеширование запросов (TanStack Query)
+- Оптимизация ре-рендеров
+
+
+# Админка доступна на
+http://localhost:3001
