@@ -19,7 +19,6 @@ export function ProductEditPage() {
   const formRef = useRef<ProductFormHandle | null>(null);
 
   const { data: product, isLoading } = useProduct(id ?? '');
-  console.log({product})
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
 
