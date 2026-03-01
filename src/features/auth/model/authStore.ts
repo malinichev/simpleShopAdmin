@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
 
   login: async (credentials) => {
-    const response = await authApi.login(credentials);
+    const response = await authApi.login({ ...credentials, client: 'admin-panel' });
     localStorage.setItem(TOKEN_KEY, response.accessToken);
     localStorage.setItem(REFRESH_KEY, response.refreshToken);
     set({ user: response.user, isAuthenticated: true });
