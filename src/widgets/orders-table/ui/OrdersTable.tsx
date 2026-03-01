@@ -90,7 +90,7 @@ export function OrdersTable({
         sorting={sorting}
         onPaginationChange={setPagination}
         onSortingChange={setSorting}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
         isLoading={isLoading}
       />
 
@@ -102,7 +102,7 @@ export function OrdersTable({
           isSubmitting={updateStatus.isPending}
           onSubmit={(newStatus, comment) => {
             updateStatus.mutate(
-              { id: statusOrder._id, status: newStatus, comment },
+              { id: statusOrder.id, status: newStatus, comment },
               { onSuccess: () => setStatusOrder(null) },
             );
           }}

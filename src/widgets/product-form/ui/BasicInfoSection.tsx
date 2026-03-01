@@ -45,7 +45,7 @@ export function BasicInfoSection() {
 
   const categoryOptions = [
     { value: '', label: 'Выберите категорию' },
-    ...categories.map((c) => ({ value: c._id, label: c.name })),
+    ...categories.map((c) => ({ value: c.id, label: c.name })),
   ];
 
   useEffect(() => {

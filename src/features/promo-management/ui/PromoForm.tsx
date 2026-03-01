@@ -212,12 +212,12 @@ export function PromoForm({ open, onClose, promotion, onSubmit, isSubmitting }: 
   const { data: productsData } = useProducts({ page: 1, limit: 100 });
 
   const categoryOptions = useMemo(
-    () => (categories ?? []).map((c) => ({ value: c._id, label: c.name })),
+    () => (categories ?? []).map((c) => ({ value: c.id, label: c.name })),
     [categories],
   );
 
   const productOptions = useMemo(
-    () => (productsData?.data ?? []).map((p) => ({ value: p._id, label: p.name })),
+    () => (productsData?.data ?? []).map((p) => ({ value: p.id, label: p.name })),
     [productsData],
   );
 

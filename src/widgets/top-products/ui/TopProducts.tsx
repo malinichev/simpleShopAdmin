@@ -4,7 +4,7 @@ import { Skeleton } from '@/shared/ui';
 import { formatRUB } from '@/shared/lib/utils/currency';
 
 interface TopProduct {
-  _id: string;
+  id: string;
   name: string;
   image?: string;
   sold: number;
@@ -65,7 +65,7 @@ export function TopProducts({ products, isLoading, isError, onRetry }: TopProduc
         ) : (
           <div className="space-y-4">
             {products.map((product, index) => (
-              <div key={product._id} className="flex items-center gap-3">
+              <div key={product.id} className="flex items-center gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                   {index + 1}
                 </span>

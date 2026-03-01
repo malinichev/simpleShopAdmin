@@ -175,7 +175,7 @@ export function CustomersPage() {
           total={total}
           pagination={pagination}
           onPaginationChange={setPagination}
-          getRowId={(row) => row._id}
+          getRowId={(row) => row.id}
           isLoading={isLoading}
         />
       )}
@@ -183,7 +183,7 @@ export function CustomersPage() {
       {/* Customer Detail Modal */}
       {selectedCustomer && (
         <CustomerDetailModal
-          customerId={selectedCustomer._id}
+          customerId={selectedCustomer.id}
           onClose={() => setSelectedCustomer(null)}
         />
       )}
@@ -282,10 +282,10 @@ function CustomerDetailModal({
               ) : (
                 <div className="space-y-0 divide-y divide-gray-100 dark:divide-gray-700">
                   {orders.map((order) => (
-                    <div key={order._id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                    <div key={order.id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
                       <div className="flex items-center gap-3">
                         <Link
-                          to={buildOrderDetailPath(order._id)}
+                          to={buildOrderDetailPath(order.id)}
                           onClick={onClose}
                           className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
                         >

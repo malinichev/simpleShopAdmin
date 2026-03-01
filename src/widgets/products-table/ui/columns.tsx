@@ -74,7 +74,7 @@ export function getProductColumns({ onDuplicate, onDelete }: ColumnsOptions): Co
       header: ({ column }) => <DataTableColumnHeader column={column} title="Название" />,
       cell: ({ row }) => (
         <Link
-          to={buildProductEditPath(row.original._id)}
+          to={buildProductEditPath(row.original.id)}
           className="font-medium text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
         >
           {row.original.name}
@@ -147,17 +147,17 @@ export function getProductColumns({ onDuplicate, onDelete }: ColumnsOptions): Co
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={buildProductEditPath(row.original._id)}>
+              <Link to={buildProductEditPath(row.original.id)}>
                 <Pencil className="h-4 w-4" />
                 Редактировать
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onDuplicate(row.original._id)}>
+            <DropdownMenuItem onSelect={() => onDuplicate(row.original.id)}>
               <Copy className="h-4 w-4" />
               Дублировать
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem destructive onSelect={() => onDelete(row.original._id)}>
+            <DropdownMenuItem destructive onSelect={() => onDelete(row.original.id)}>
               <Trash2 className="h-4 w-4" />
               Удалить
             </DropdownMenuItem>

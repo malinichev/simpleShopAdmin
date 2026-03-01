@@ -72,7 +72,7 @@ export interface TopQueryParams {
 }
 
 export interface LowStockProduct {
-  _id: string;
+  id: string;
   name: string;
   sku: string;
   stock: number;

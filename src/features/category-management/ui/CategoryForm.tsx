@@ -29,7 +29,7 @@ function toSlug(str: string): string {
 }
 
 function getDescendantIds(category: Category): string[] {
-  const ids: string[] = [category._id];
+  const ids: string[] = [category.id];
   category.children?.forEach((child) => {
     ids.push(...getDescendantIds(child));
   });
@@ -132,8 +132,8 @@ export function CategoryForm({
   const parentOptions = [
     { value: '', label: 'Без родителя (корневая)' },
     ...flat
-      .filter((c) => !excludeIds.includes(c._id))
-      .map((c) => ({ value: c._id, label: c.name })),
+      .filter((c) => !excludeIds.includes(c.id))
+      .map((c) => ({ value: c.id, label: c.name })),
   ];
 
   return (

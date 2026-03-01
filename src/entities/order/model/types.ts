@@ -1,7 +1,7 @@
 import type { OrderStatus } from '@/shared/constants';
 
 export interface OrderUser {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -22,7 +22,7 @@ export interface OrderItem {
 }
 
 export interface OrderHistoryEvent {
-  _id: string;
+  id: string;
   status: OrderStatus;
   comment?: string;
   createdBy?: string;
@@ -43,7 +43,7 @@ export interface ShippingAddress {
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface Order {
-  _id: string;
+  id: string;
   orderNumber: string;
   userId: string;
   user?: OrderUser;

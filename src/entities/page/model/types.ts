@@ -1,5 +1,5 @@
 export interface PageFile {
-  _id: string;
+  id: string;
   key: string;
   url: string;
   name: string;
@@ -9,7 +9,7 @@ export interface PageFile {
 }
 
 export interface Page {
-  _id: string;
+  id: string;
   slug: string;
   title: string;
   metaTitle?: string;

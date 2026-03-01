@@ -1,11 +1,11 @@
 export interface ReviewUser {
-  _id: string;
+  id: string;
   firstName: string;
   lastName: string;
 }
 
 export interface Review {
-  _id: string;
+  id: string;
   productId: string;
   userId: string;
   user?: ReviewUser;

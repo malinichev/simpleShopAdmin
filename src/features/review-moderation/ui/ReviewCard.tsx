@@ -103,7 +103,7 @@ export function ReviewCard({ review, onApprove, onReply, onDelete }: ReviewCardP
         {!review.isApproved && (
           <button
             type="button"
-            onClick={() => onApprove(review._id)}
+            onClick={() => onApprove(review.id)}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
           >
             <Check className="h-3.5 w-3.5" />
@@ -120,7 +120,7 @@ export function ReviewCard({ review, onApprove, onReply, onDelete }: ReviewCardP
         </button>
         <button
           type="button"
-          onClick={() => onDelete(review._id)}
+          onClick={() => onDelete(review.id)}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
         >
           <Trash2 className="h-3.5 w-3.5" />

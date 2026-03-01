@@ -31,7 +31,7 @@ export interface ProductSEO {
 }
 
 export interface Product {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   description: string;
@@ -41,7 +41,7 @@ export interface Product {
   compareAtPrice?: number;
   categoryId: string;
   category?: {
-    _id: string;
+    id: string;
     name: string;
     slug: string;
   };

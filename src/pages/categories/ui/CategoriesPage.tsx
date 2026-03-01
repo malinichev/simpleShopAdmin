@@ -57,7 +57,7 @@ export function CategoriesPage() {
     (data: CategoryFormData) => {
       if (editingCategory) {
         updateCategory.mutate(
-          { id: editingCategory._id, data },
+          { id: editingCategory.id, data },
           { onSuccess: () => setFormOpen(false) },
         );
       } else {
@@ -71,7 +71,7 @@ export function CategoriesPage() {
 
   const handleDeleteConfirm = useCallback(() => {
     if (deletingCategory) {
-      deleteCategory.mutate(deletingCategory._id, {
+      deleteCategory.mutate(deletingCategory.id, {
         onSuccess: () => setDeletingCategory(null),
       });
     }

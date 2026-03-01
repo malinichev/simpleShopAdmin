@@ -15,7 +15,7 @@ export interface CustomerAddress {
 export type UserRole = 'customer' | 'manager' | 'admin';
 
 export interface Customer {
-  _id: string;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;

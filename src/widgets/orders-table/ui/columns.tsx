@@ -34,7 +34,7 @@ export function getOrderColumns({ onChangeStatus }: ColumnsOptions): ColumnDef<O
       header: 'Номер',
       cell: ({ row }) => (
         <Link
-          to={buildOrderDetailPath(row.original._id)}
+          to={buildOrderDetailPath(row.original.id)}
           className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
         >
           {row.original.orderNumber}
@@ -113,7 +113,7 @@ export function getOrderColumns({ onChangeStatus }: ColumnsOptions): ColumnDef<O
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={buildOrderDetailPath(row.original._id)}>
+              <Link to={buildOrderDetailPath(row.original.id)}>
                 <Eye className="h-4 w-4" />
                 Просмотр
               </Link>

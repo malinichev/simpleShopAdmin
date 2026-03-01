@@ -9,7 +9,7 @@ import { formatRUB } from '@/shared/lib/utils/currency';
 import { formatDate } from '@/shared/lib/utils/date';
 
 interface RecentOrder {
-  _id: string;
+  id: string;
   orderNumber: string;
   customerName: string;
   total: number;
@@ -94,7 +94,7 @@ export function RecentOrders({ orders, isLoading, isError, onRetry }: RecentOrde
         ) : (
           <div className="space-y-0 divide-y divide-gray-100 dark:divide-gray-700">
             {orders.map((order) => (
-              <div key={order._id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+              <div key={order.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                 <div className="flex items-center gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -118,7 +118,7 @@ export function RecentOrders({ orders, isLoading, isError, onRetry }: RecentOrde
                     </p>
                   </div>
                   <Link
-                    to={buildOrderDetailPath(order._id)}
+                    to={buildOrderDetailPath(order.id)}
                     className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                   >
                     <Eye className="h-4 w-4" />

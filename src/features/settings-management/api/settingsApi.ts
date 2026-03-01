@@ -11,7 +11,7 @@ export interface NotificationSettings {
 }
 
 export interface StoreSettings {
-  _id: string;
+  id: string;
   storeName: string;
   email: string;
   phone: string;
@@ -25,7 +25,7 @@ export interface StoreSettings {
 }
 
 export interface ShippingMethod {
-  _id: string;
+  id: string;
   name: string;
   price: number;
   description: string;
@@ -36,7 +36,7 @@ export interface ShippingMethod {
 }
 
 export interface PaymentMethod {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   isActive: boolean;
@@ -46,7 +46,7 @@ export interface PaymentMethod {
 }
 
 export type UpdateSettingsPayload = Partial<
-  Omit<StoreSettings, '_id' | 'createdAt' | 'updatedAt'>
+  Omit<StoreSettings, 'id' | 'createdAt' | 'updatedAt'>
 >;
 
 export interface CreateShippingMethodPayload {

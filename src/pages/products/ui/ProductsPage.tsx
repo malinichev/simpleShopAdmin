@@ -34,7 +34,7 @@ export function ProductsPage() {
   const categoryOptions = useMemo(
     () => [
       { value: '', label: 'Все категории' },
-      ...categories.map((c) => ({ value: c._id, label: c.name })),
+      ...categories.map((c) => ({ value: c.id, label: c.name })),
     ],
     [categories],
   );

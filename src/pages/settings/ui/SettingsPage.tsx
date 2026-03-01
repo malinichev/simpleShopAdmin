@@ -227,7 +227,7 @@ function ShippingTab() {
 
   const onSubmit = (data: ShippingFormData) => {
     if (editMethod) {
-      updateMethod.mutate({ id: editMethod._id, data }, { onSuccess: () => setFormOpen(false) });
+      updateMethod.mutate({ id: editMethod.id, data }, { onSuccess: () => setFormOpen(false) });
     } else {
       createMethod.mutate(data, {
         onSuccess: () => setFormOpen(false),
@@ -236,7 +236,7 @@ function ShippingTab() {
   };
 
   const toggleActive = (method: ShippingMethodType) => {
-    updateMethod.mutate({ id: method._id, data: { isActive: !method.isActive } });
+    updateMethod.mutate({ id: method.id, data: { isActive: !method.isActive } });
   };
 
   const handleDeleteConfirm = () => {
@@ -301,7 +301,7 @@ function ShippingTab() {
                 <tbody>
                   {methods.map((m) => (
                     <tr
-                      key={m._id}
+                      key={m.id}
                       className="border-b border-gray-100 last:border-0 dark:border-gray-800"
                     >
                       <td className="py-3 font-medium text-gray-900 dark:text-white">{m.name}</td>
@@ -323,7 +323,7 @@ function ShippingTab() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setDeleteId(m._id)}
+                            onClick={() => setDeleteId(m.id)}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -427,7 +427,7 @@ function PaymentTab() {
 
   const onSubmit = (data: PaymentFormData) => {
     if (editMethod) {
-      updateMethod.mutate({ id: editMethod._id, data }, { onSuccess: () => setFormOpen(false) });
+      updateMethod.mutate({ id: editMethod.id, data }, { onSuccess: () => setFormOpen(false) });
     } else {
       createMethod.mutate(data, {
         onSuccess: () => setFormOpen(false),
@@ -436,7 +436,7 @@ function PaymentTab() {
   };
 
   const toggleActive = (method: PaymentMethodType) => {
-    updateMethod.mutate({ id: method._id, data: { isActive: !method.isActive } });
+    updateMethod.mutate({ id: method.id, data: { isActive: !method.isActive } });
   };
 
   const handleDeleteConfirm = () => {
@@ -498,7 +498,7 @@ function PaymentTab() {
                 <tbody>
                   {methods.map((m) => (
                     <tr
-                      key={m._id}
+                      key={m.id}
                       className="border-b border-gray-100 last:border-0 dark:border-gray-800"
                     >
                       <td className="py-3 font-medium text-gray-900 dark:text-white">{m.name}</td>
@@ -517,7 +517,7 @@ function PaymentTab() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setDeleteId(m._id)}
+                            onClick={() => setDeleteId(m.id)}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -881,7 +881,7 @@ function AdminsTab() {
                 <tbody>
                   {admins.map((admin) => (
                     <tr
-                      key={admin._id}
+                      key={admin.id}
                       className="border-b border-gray-100 last:border-0 dark:border-gray-800"
                     >
                       <td className="py-3 font-medium text-gray-900 dark:text-white">
@@ -900,7 +900,7 @@ function AdminsTab() {
                         <div className="flex items-center justify-end">
                           <button
                             type="button"
-                            onClick={() => setDeleteId(admin._id)}
+                            onClick={() => setDeleteId(admin.id)}
                             className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
                           >
                             <Trash2 className="h-4 w-4" />

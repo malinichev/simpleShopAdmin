@@ -137,7 +137,7 @@ export function ReviewsPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {reviews.map((review) => (
               <ReviewCard
-                key={review._id}
+                key={review.id}
                 review={review}
                 onApprove={handleApprove}
                 onReply={handleReply}
@@ -166,7 +166,7 @@ export function ReviewsPage() {
           isSubmitting={replyToReview.isPending}
           onSubmit={(text) => {
             replyToReview.mutate(
-              { id: replyReview._id, text },
+              { id: replyReview.id, text },
               { onSuccess: () => setReplyReview(null) },
             );
           }}

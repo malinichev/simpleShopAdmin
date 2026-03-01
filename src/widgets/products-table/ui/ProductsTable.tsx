@@ -105,7 +105,7 @@ export function ProductsTable({
         onPaginationChange={setPagination}
         onSortingChange={setSorting}
         onRowSelectionChange={onRowSelectionChange}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
         isLoading={isLoading}
       />
 

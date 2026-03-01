@@ -307,7 +307,7 @@ export function OrderDetailPage() {
         isSubmitting={updateStatus.isPending}
         onSubmit={(newStatus, comment) => {
           updateStatus.mutate(
-            { id: order._id, status: newStatus, comment },
+            { id: order.id, status: newStatus, comment },
             { onSuccess: () => setStatusModalOpen(false) },
           );
         }}

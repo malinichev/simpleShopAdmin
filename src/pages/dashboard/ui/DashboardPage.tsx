@@ -58,7 +58,7 @@ export function DashboardPage() {
 
   // Map top products to widget format
   const topProducts = topProductsData?.map((p) => ({
-    _id: p.productId,
+    id: p.productId,
     name: p.name,
     image: undefined as string | undefined,
     sold: p.soldCount,
@@ -67,7 +67,7 @@ export function DashboardPage() {
 
   // Map orders to recent orders format
   const recentOrders = ordersData?.data.map((order) => ({
-    _id: order._id,
+    id: order.id,
     orderNumber: order.orderNumber,
     customerName: order.user
       ? `${order.user.firstName} ${order.user.lastName}`
@@ -171,7 +171,7 @@ export function DashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {lowStockData.map((product) => (
-                    <tr key={product._id}>
+                    <tr key={product.id}>
                       <td className="py-3 font-medium text-gray-900 dark:text-white">
                         {product.name}
                       </td>

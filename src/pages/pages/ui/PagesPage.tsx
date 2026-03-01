@@ -126,7 +126,7 @@ export function PagesPage() {
         data={pages ?? []}
         total={pages?.length ?? 0}
         isLoading={isLoading}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
         manualPagination={false}
         manualSorting={false}
       />

@@ -19,7 +19,7 @@ export function OrderTimeline({ events, className }: OrderTimelineProps) {
         const isLast = index === sorted.length - 1;
 
         return (
-          <div key={event._id} className="relative flex gap-4 pb-6 last:pb-0">
+          <div key={event.id} className="relative flex gap-4 pb-6 last:pb-0">
             {/* Vertical line */}
             {!isLast && (
               <div className="absolute left-[9px] top-5 h-full w-0.5 bg-gray-200 dark:bg-gray-700" />

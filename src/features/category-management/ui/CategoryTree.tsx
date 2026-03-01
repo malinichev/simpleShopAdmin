@@ -47,8 +47,8 @@ function flattenTree(
   const result: FlatNode[] = [];
   categories.forEach((cat, index) => {
     result.push({ category: cat, depth, parentId, index });
-    if (cat.children?.length && expandedIds.has(cat._id)) {
-      result.push(...flattenTree(cat.children, depth + 1, cat._id, expandedIds));
+    if (cat.children?.length && expandedIds.has(cat.id)) {
+      result.push(...flattenTree(cat.children, depth + 1, cat.id, expandedIds));
     }
   });
   return result;
@@ -57,7 +57,7 @@ function flattenTree(
 function collectAllIds(categories: Category[]): string[] {
   const ids: string[] = [];
   for (const cat of categories) {
-    ids.push(cat._id);
+    ids.push(cat.id);
     if (cat.children?.length) {
       ids.push(...collectAllIds(cat.children));
     }
@@ -66,13 +66,13 @@ function collectAllIds(categories: Category[]): string[] {
 }
 
 function isDescendant(category: Category, targetId: string): boolean {
-  if (category._id === targetId) return true;
+  if (category.id === targetId) return true;
   return category.children?.some((c) => isDescendant(c, targetId)) ?? false;
 }
 
 function findCategoryById(categories: Category[], id: string): Category | undefined {
   for (const cat of categories) {
-    if (cat._id === id) return cat;
+    if (cat.id === id) return cat;
     if (cat.children?.length) {
       const found = findCategoryById(cat.children, id);
       if (found) return found;
@@ -144,10 +144,10 @@ export function CategoryTree({
     [categories, expandedIds],
   );
 
-  const flatIds = useMemo(() => flatNodes.map((n) => n.category._id), [flatNodes]);
+  const flatIds = useMemo(() => flatNodes.map((n) => n.category.id), [flatNodes]);
 
   const activeNode = useMemo(
-    () => (activeId ? flatNodes.find((n) => n.category._id === activeId) : null),
+    () => (activeId ? flatNodes.find((n) => n.category.id === activeId) : null),
     [activeId, flatNodes],
   );
 
@@ -170,8 +170,8 @@ export function CategoryTree({
       const draggedId = active.id as string;
       const targetId = over.id as string;
 
-      const draggedNode = flatNodes.find((n) => n.category._id === draggedId);
-      const targetNode = flatNodes.find((n) => n.category._id === targetId);
+      const draggedNode = flatNodes.find((n) => n.category.id === draggedId);
+      const targetNode = flatNodes.find((n) => n.category.id === targetId);
 
       if (!draggedNode || !targetNode) return;
 
@@ -182,8 +182,8 @@ export function CategoryTree({
       if (draggedNode.parentId === targetNode.parentId) {
         // Same parent — reorder siblings
         const siblings = getSiblings(categories, draggedNode.parentId);
-        const oldIndex = siblings.findIndex((s) => s._id === draggedId);
-        const newIndex = siblings.findIndex((s) => s._id === targetId);
+        const oldIndex = siblings.findIndex((s) => s.id === draggedId);
+        const newIndex = siblings.findIndex((s) => s.id === targetId);
 
         if (oldIndex === -1 || newIndex === -1) return;
 
@@ -191,11 +191,11 @@ export function CategoryTree({
         const [moved] = reordered.splice(oldIndex, 1);
         reordered.splice(newIndex, 0, moved);
 
-        onReorder(reordered.map((cat, i) => ({ id: cat._id, order: i })));
+        onReorder(reordered.map((cat, i) => ({ id: cat.id, order: i })));
       } else {
         // Different parent — move to target's parent at target's position
         const targetSiblings = getSiblings(categories, targetNode.parentId);
-        const targetIndex = targetSiblings.findIndex((s) => s._id === targetId);
+        const targetIndex = targetSiblings.findIndex((s) => s.id === targetId);
 
         onMove({
           id: draggedId,
@@ -225,11 +225,11 @@ export function CategoryTree({
         <div className="space-y-0.5">
           {flatNodes.map((node) => (
             <SortableCategoryNode
-              key={node.category._id}
+              key={node.category.id}
               node={node}
-              isOver={overId === node.category._id}
-              isDragging={activeId === node.category._id}
-              isExpanded={expandedIds.has(node.category._id)}
+              isOver={overId === node.category.id}
+              isDragging={activeId === node.category.id}
+              isExpanded={expandedIds.has(node.category.id)}
               onToggleExpand={toggleExpand}
               onEdit={onEdit}
               onAddChild={onAddChild}
@@ -286,7 +286,7 @@ function SortableCategoryNode({
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: category._id });
+  } = useSortable({ id: category.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -318,7 +318,7 @@ function SortableCategoryNode({
       {/* Expand/collapse */}
       <button
         type="button"
-        onClick={() => onToggleExpand(category._id)}
+        onClick={() => onToggleExpand(category.id)}
         className={cn(
           'flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors',
           hasChildren
@@ -371,7 +371,7 @@ function SortableCategoryNode({
         </button>
         <button
           type="button"
-          onClick={() => onAddChild(category._id)}
+          onClick={() => onAddChild(category.id)}
           className="rounded p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           title="Добавить подкатегорию"
         >

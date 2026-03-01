@@ -1,7 +1,7 @@
 export type PromotionType = 'percentage' | 'fixed' | 'free_shipping';
 
 export interface Promotion {
-  _id: string;
+  id: string;
   code: string;
   name: string;
   description?: string;

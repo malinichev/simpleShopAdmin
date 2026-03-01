@@ -104,7 +104,7 @@ export function PromotionsPage() {
       const payload = toPayload(data);
       if (editPromo) {
         updatePromotion.mutate(
-          { id: editPromo._id, data: payload },
+          { id: editPromo.id, data: payload },
           { onSuccess: () => handleFormClose() },
         );
       } else {
@@ -218,7 +218,7 @@ export function PromotionsPage() {
             </button>
             <button
               type="button"
-              onClick={() => setDeleteId(row.original._id)}
+              onClick={() => setDeleteId(row.original.id)}
               className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
             >
               <Trash2 className="h-4 w-4" />
@@ -252,7 +252,7 @@ export function PromotionsPage() {
         data={promotions ?? []}
         total={promotions?.length ?? 0}
         isLoading={isLoading}
-        getRowId={(row) => row._id}
+        getRowId={(row) => row.id}
         manualPagination={false}
         manualSorting={false}
       />

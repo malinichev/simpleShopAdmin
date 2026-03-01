@@ -310,7 +310,7 @@ export function PageEditPage() {
                 <ul className="max-h-[600px] space-y-2 overflow-y-auto">
                   {files.map((file) => (
                     <li
-                      key={file._id}
+                      key={file.id}
                       className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
                     >
                       <FileIcon mimeType={file.mimeType} />
