@@ -2,14 +2,26 @@ import type { InternalAxiosRequestConfig } from 'axios';
 import { api } from './instance';
 import type { AuthTokens } from './types';
 
-const TOKEN_KEY = 'accessToken';
-const REFRESH_KEY = 'refreshToken';
-
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
   reject: (error: unknown) => void;
 }> = [];
+
+// Token holder — set by authStore, avoids circular dependency
+let _getAccessToken: (() => string | null) | null = null;
+let _setAccessToken: ((token: string | null) => void) | null = null;
+let _clearAuth: (() => void) | null = null;
+
+export function bindAuthStore(fns: {
+  getAccessToken: () => string | null;
+  setAccessToken: (token: string | null) => void;
+  clearAuth: () => void;
+}): void {
+  _getAccessToken = fns.getAccessToken;
+  _setAccessToken = fns.setAccessToken;
+  _clearAuth = fns.clearAuth;
+}
 
 function processQueue(error: unknown, token: string | null): void {
   failedQueue.forEach((promise) => {
@@ -25,7 +37,7 @@ function processQueue(error: unknown, token: string | null): void {
 export function setupInterceptors(): void {
   api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      const token = localStorage.getItem(TOKEN_KEY);
+      const token = _getAccessToken?.();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -62,18 +74,11 @@ export function setupInterceptors(): void {
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem(REFRESH_KEY);
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
+        // Refresh token is sent automatically via httpOnly cookie (withCredentials: true)
+        const { data } = await api.post<AuthTokens>('/auth/refresh');
 
-        const { data } = await api.post<AuthTokens>('/auth/refresh', {
-          refreshToken,
-        });
-
-        const { accessToken, refreshToken: newRefreshToken } = data;
-        localStorage.setItem(TOKEN_KEY, accessToken);
-        localStorage.setItem(REFRESH_KEY, newRefreshToken);
+        const { accessToken } = data;
+        _setAccessToken?.(accessToken);
 
         processQueue(null, accessToken);
 
@@ -83,11 +88,7 @@ export function setupInterceptors(): void {
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_KEY);
-
-        const { useAuthStore } = await import('@/features/auth');
-        useAuthStore.getState().clearAuth();
+        _clearAuth?.();
 
         window.location.href = '/login';
         return Promise.reject(refreshError);

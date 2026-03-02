@@ -22,5 +22,5 @@ export type {
 } from './types';
 export { orderStatuses, productStatuses, ROLES } from './constants';
 export type { OrderStatus, ProductStatus, Role } from './constants';
-export { api, setupInterceptors } from './api';
+export { api, setupInterceptors, bindAuthStore } from './api';
 export type { User, UserRole, AuthTokens, LoginRequest, LoginResponse } from './api';

@@ -8,7 +8,7 @@ module.exports = {
       path: '/var/www/simple-shop-admin',
       'pre-deploy-local': '',
       'post-deploy':
-        'echo "VITE_API_URL=http://45.81.243.129:4000/api" > .env.production && echo "VITE_APP_NAME=SportShop Admin" >> .env.production && pnpm install --frozen-lockfile && pnpm run build',
+        'ln -sf /var/www/simple-shop-admin/.env.production .env.production && pnpm install --frozen-lockfile && pnpm run build',
       'pre-setup': '',
     },
   },

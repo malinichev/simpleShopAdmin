@@ -2,11 +2,9 @@ import { create } from 'zustand';
 import { authApi } from '../api/authApi';
 import type { LoginRequest, User, VerifyEmailRequest} from '@/shared/api/types';
 
-const TOKEN_KEY = 'accessToken';
-const REFRESH_KEY = 'refreshToken';
-
 interface AuthState {
   user: User | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isEmailVerified: boolean;
   isLoading: boolean;
@@ -15,20 +13,20 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   setUser: (user: User | null) => void;
+  setAccessToken: (token: string | null) => void;
   clearAuth: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  accessToken: null,
   isAuthenticated: false,
   isEmailVerified: false,
   isLoading: true,
 
   login: async (credentials) => {
     const response = await authApi.login({ ...credentials, client: 'admin-panel' });
-    localStorage.setItem(TOKEN_KEY, response.accessToken);
-    localStorage.setItem(REFRESH_KEY, response.refreshToken);
-    set({ user: response.user, isAuthenticated: true });
+    set({ accessToken: response.accessToken, user: response.user, isAuthenticated: true });
   },
 
   verifyEmail: async (credentials) => {
@@ -36,41 +34,30 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({  isEmailVerified: true });
   },
 
-
   logout: async () => {
     try {
       await authApi.logout();
     } catch {
       // ignore logout errors
     } finally {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(REFRESH_KEY);
-      set({ user: null, isAuthenticated: false });
+      set({ accessToken: null, user: null, isAuthenticated: false });
     }
   },
 
   checkAuth: async () => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      set({ user: null, isAuthenticated: false, isLoading: false });
-      return;
-    }
-
     try {
       const user = await authApi.getMe();
       set({ user, isAuthenticated: true, isLoading: false });
     } catch {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(REFRESH_KEY);
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ accessToken: null, user: null, isAuthenticated: false, isLoading: false });
     }
   },
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),
 
+  setAccessToken: (token) => set({ accessToken: token }),
+
   clearAuth: () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-    set({ user: null, isAuthenticated: false });
+    set({ accessToken: null, user: null, isAuthenticated: false });
   },
 }));
