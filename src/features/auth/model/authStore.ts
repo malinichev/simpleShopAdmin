@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authApi } from '../api/authApi';
-import type { LoginRequest, User, VerifyEmailRequest} from '@/shared/api/types';
+import { api } from '@/shared/api/instance';
+import type { LoginRequest, User, VerifyEmailRequest, AuthTokens } from '@/shared/api/types';
 
 interface AuthState {
   user: User | null;
@@ -45,6 +46,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   checkAuth: async () => {
+    const { accessToken } = useAuthStore.getState();
+
+    // No token in memory — try to restore session via httpOnly refresh cookie
+    if (!accessToken) {
+      try {
+        const { data } = await api.post<AuthTokens>('/auth/refresh');
+        set({ accessToken: data.accessToken });
+      } catch {
+        // No valid session
+        set({ user: null, isAuthenticated: false, isLoading: false });
+        return;
+      }
+    }
+
     try {
       const user = await authApi.getMe();
       set({ user, isAuthenticated: true, isLoading: false });

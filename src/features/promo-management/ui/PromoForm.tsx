@@ -254,6 +254,7 @@ export function PromoForm({ open, onClose, promotion, onSubmit, isSubmitting }: 
     formState: { errors },
   } = form;
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form's watch() is safe here
   const promoType = watch('type');
 
   useEffect(() => {

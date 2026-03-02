@@ -45,6 +45,7 @@ export function DataTable<TData>({
   manualSorting = true,
   className,
 }: DataTableProps<TData>) {
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() is safe here
   const table = useReactTable({
     data,
     columns,

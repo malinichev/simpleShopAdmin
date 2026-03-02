@@ -22,5 +22,3 @@ export function AppProviders({ children }: AppProvidersProps) {
     </ErrorBoundary>
   );
 }
-
-export { useTheme } from './ThemeProvider';

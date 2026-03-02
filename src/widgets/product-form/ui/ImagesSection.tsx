@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import {
@@ -12,7 +12,8 @@ import type { ProductFormData } from '@/features/product-management';
 
 export function ImagesSection() {
   const { watch, setValue } = useFormContext<ProductFormData>();
-  const images = watch('images') ?? [];
+  const rawImages = watch('images');
+  const images = useMemo(() => rawImages ?? [], [rawImages]);
 
   const galleryImages: ImageItem[] = images.map((img, i) => ({
     id: img.id,

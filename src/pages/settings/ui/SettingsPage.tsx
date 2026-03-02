@@ -610,13 +610,9 @@ function EmailTab() {
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  const [notifyEmail, setNotifyEmail] = useState('');
-
-  useEffect(() => {
-    if (settings) {
-      setNotifyEmail(settings.notificationEmail ?? '');
-    }
-  }, [settings]);
+  const [notifyEmailOverride, setNotifyEmailOverride] = useState<string | null>(null);
+  const notifyEmail = notifyEmailOverride ?? settings?.notificationEmail ?? '';
+  const setNotifyEmail = (value: string) => setNotifyEmailOverride(value);
 
   const defaultNotifications = {
     newOrder: false,

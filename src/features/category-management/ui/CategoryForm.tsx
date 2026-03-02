@@ -87,6 +87,7 @@ export function CategoryForm({
   });
 
   const { register, control, watch, setValue, reset, handleSubmit, formState: { errors } } = form;
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form's watch() is safe here
   const name = watch('name');
 
   // Reset form when modal opens
