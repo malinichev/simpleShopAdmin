@@ -3,6 +3,15 @@ import { authApi } from '../api/authApi';
 import { api } from '@/shared/api/instance';
 import type { LoginRequest, User, VerifyEmailRequest, AuthTokens } from '@/shared/api/types';
 
+function isAdminToken(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.aud === 'admin-panel';
+  } catch {
+    return false;
+  }
+}
+
 interface AuthState {
   user: User | null;
   accessToken: string | null;
@@ -52,6 +61,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (!accessToken) {
       try {
         const { data } = await api.post<AuthTokens>('/auth/refresh');
+        if (!isAdminToken(data.accessToken)) {
+          // Token from storefront session — not valid for admin panel
+          set({ user: null, isAuthenticated: false, isLoading: false });
+          return;
+        }
         set({ accessToken: data.accessToken });
       } catch {
         // No valid session

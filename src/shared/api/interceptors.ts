@@ -2,6 +2,15 @@ import type { InternalAxiosRequestConfig } from 'axios';
 import { api } from './instance';
 import type { AuthTokens } from './types';
 
+function isAdminToken(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.aud === 'admin-panel';
+  } catch {
+    return false;
+  }
+}
+
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -78,6 +87,12 @@ export function setupInterceptors(): void {
         const { data } = await api.post<AuthTokens>('/auth/refresh');
 
         const { accessToken } = data;
+
+        // Reject tokens without admin-panel audience (e.g. from storefront session)
+        if (!isAdminToken(accessToken)) {
+          throw new Error('Invalid token audience');
+        }
+
         _setAccessToken?.(accessToken);
 
         processQueue(null, accessToken);
