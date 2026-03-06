@@ -117,6 +117,38 @@ export function BasicInfoSection() {
           <CardTitle>Классификация</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Input
+              label="Цвет"
+              {...register('color')}
+              error={errors.color?.message}
+              placeholder="Чёрный"
+            />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Hex цвета
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  {...register('colorHex')}
+                  className="h-9 w-12 cursor-pointer rounded border border-gray-200 bg-transparent p-0.5 dark:border-gray-700"
+                />
+                <Input
+                  {...register('colorHex')}
+                  placeholder="#000000"
+                  error={errors.colorHex?.message}
+                />
+              </div>
+            </div>
+            <Input
+              label="Model ID"
+              {...register('modelId')}
+              error={errors.modelId?.message}
+              placeholder="UUID для связки цветов"
+            />
+          </div>
+
           <Input
             label="Материал"
             {...register('material')}

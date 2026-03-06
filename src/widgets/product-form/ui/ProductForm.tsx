@@ -41,6 +41,9 @@ function productToFormData(product: Product): ProductFormData {
     material: product.attributes?.material ?? '',
     activityTypes: product.attributes?.activity ?? [],
     features: product.attributes?.features ?? [],
+    color: product.color ?? '',
+    colorHex: product.colorHex ?? '#000000',
+    modelId: product.modelId ?? '',
     images: sorted.map((img, i) => ({
       id: img.id,
       url: img.url,
@@ -50,8 +53,6 @@ function productToFormData(product: Product): ProductFormData {
     variants: (product.variants ?? []).map((v) => ({
       id: v.id ?? '',
       size: v.size,
-      color: v.color,
-      colorHex: v.colorHex ?? '#000000',
       sku: v.sku,
       stock: v.stock,
       price: v.price,
@@ -77,6 +78,9 @@ export function ProductForm({ initialData, onSubmit, isSubmitting, formRef }: Pr
       price: 0,
       status: 'draft',
       tags: [],
+      color: '',
+      colorHex: '#000000',
+      modelId: '',
       material: '',
       activityTypes: [],
       features: [],

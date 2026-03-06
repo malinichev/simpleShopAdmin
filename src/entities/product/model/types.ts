@@ -10,8 +10,6 @@ export interface ProductImage {
 export interface ProductVariant {
   id: string;
   size: string;
-  color: string;
-  colorHex: string;
   sku: string;
   stock: number;
   price?: number;
@@ -55,6 +53,9 @@ export interface Product {
   status: ProductStatus;
   seo: ProductSEO;
   isVisible: boolean;
+  color?: string;
+  colorHex?: string;
+  modelId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

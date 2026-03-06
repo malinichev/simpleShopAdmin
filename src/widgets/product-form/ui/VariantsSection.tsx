@@ -16,7 +16,7 @@ export function VariantsSection() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ id: '', size: '', color: '', colorHex: '#000000', sku: '', stock: 0, price: undefined })}
+          onClick={() => append({ id: '', size: '', sku: '', stock: 0, price: undefined })}
         >
           <Plus className="h-4 w-4" />
           Добавить вариант
@@ -33,8 +33,6 @@ export function VariantsSection() {
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   <th className="pb-2 pr-3 text-left font-medium text-gray-500">Размер</th>
-                  <th className="pb-2 pr-3 text-left font-medium text-gray-500">Цвет</th>
-                  <th className="pb-2 pr-3 text-left font-medium text-gray-500 w-16">Hex</th>
                   <th className="pb-2 pr-3 text-left font-medium text-gray-500">SKU</th>
                   <th className="pb-2 pr-3 text-left font-medium text-gray-500">Остаток</th>
                   <th className="pb-2 pr-3 text-left font-medium text-gray-500">Цена (₽)</th>
@@ -51,20 +49,6 @@ export function VariantsSection() {
                           {...register(`variants.${index}.size`)}
                           placeholder="XS, S, M..."
                           className={inputClass(variantErrors?.size)}
-                        />
-                      </td>
-                      <td className="py-2 pr-3">
-                        <input
-                          {...register(`variants.${index}.color`)}
-                          placeholder="Чёрный"
-                          className={inputClass(variantErrors?.color)}
-                        />
-                      </td>
-                      <td className="py-2 pr-3">
-                        <input
-                          type="color"
-                          {...register(`variants.${index}.colorHex`)}
-                          className="h-8 w-10 cursor-pointer rounded border border-gray-200 bg-transparent p-0.5 dark:border-gray-700"
                         />
                       </td>
                       <td className="py-2 pr-3">

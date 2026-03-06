@@ -10,8 +10,6 @@ export const imageSchema = z.object({
 export const variantSchema = z.object({
   id: z.string().optional().default(''),
   size: z.string().min(1, 'Размер обязателен'),
-  color: z.string().min(1, 'Цвет обязателен'),
-  colorHex: z.string().optional().default('#000000'),
   sku: z.string().min(1, 'SKU обязателен'),
   stock: z.coerce.number().min(0, 'Остаток не может быть отрицательным'),
   price: z.coerce.number().min(0).optional(),
@@ -31,6 +29,9 @@ export const productSchema = z.object({
   material: z.string().min(1, 'Материал обязателен'),
   activityTypes: z.array(z.string()).default([]),
   features: z.array(z.string()).default([]),
+  color: z.string().optional().default(''),
+  colorHex: z.string().optional().default('#000000'),
+  modelId: z.string().optional().default(''),
   images: z.array(imageSchema).default([]),
   variants: z.array(variantSchema).default([]),
   metaTitle: z.string().max(70, 'Макс. 70 символов').optional(),

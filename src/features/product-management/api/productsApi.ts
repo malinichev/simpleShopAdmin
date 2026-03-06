@@ -26,6 +26,9 @@ function toApiPayload(formData: ProductFormData) {
     categoryId: formData.categoryId,
     tags: formData.tags,
     status: formData.status,
+    color: formData.color || undefined,
+    colorHex: formData.colorHex || undefined,
+    modelId: formData.modelId || undefined,
     images: formData.images.map((img, i) => ({
       id: img.id,
       url: img.url,
@@ -35,8 +38,6 @@ function toApiPayload(formData: ProductFormData) {
     variants: formData.variants.map((v, i) => ({
       id: v.id || `var-${i}`,
       size: v.size,
-      color: v.color,
-      colorHex: v.colorHex || '#000000',
       sku: v.sku,
       stock: v.stock,
       price: v.price,
