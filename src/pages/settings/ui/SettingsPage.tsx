@@ -40,13 +40,21 @@ import { toast } from 'sonner';
 // General Settings Tab
 // ============================================================
 
+const socialLinksSchema = z.object({
+  instagram: z.string().optional(),
+  telegram: z.string().optional(),
+  vk: z.string().optional(),
+});
+
 const generalSchema = z.object({
   storeName: z.string().min(1, 'Название обязательно'),
+  description: z.string().optional(),
   email: z.string().email('Некорректный email'),
   phone: z.string().optional(),
   address: z.string().optional(),
   currency: z.string(),
   language: z.string(),
+  socialLinks: socialLinksSchema,
 });
 
 type GeneralFormData = z.infer<typeof generalSchema>;
@@ -80,11 +88,13 @@ function GeneralTab() {
     resolver,
     defaultValues: {
       storeName: '',
+      description: '',
       email: '',
       phone: '',
       address: '',
       currency: 'RUB',
       language: 'ru',
+      socialLinks: { instagram: '', telegram: '', vk: '' },
     },
   });
 
@@ -92,11 +102,17 @@ function GeneralTab() {
     if (settings) {
       reset({
         storeName: settings.storeName,
+        description: settings.description ?? '',
         email: settings.email,
         phone: settings.phone,
         address: settings.address,
         currency: settings.currency,
         language: settings.language,
+        socialLinks: {
+          instagram: settings.socialLinks?.instagram ?? '',
+          telegram: settings.socialLinks?.telegram ?? '',
+          vk: settings.socialLinks?.vk ?? '',
+        },
       });
     }
   }, [settings, reset]);
@@ -134,6 +150,12 @@ function GeneralTab() {
             {...register('storeName')}
             error={errors.storeName?.message}
           />
+          <Textarea
+            label="Описание магазина (для Footer)"
+            {...register('description')}
+            rows={2}
+            placeholder="Краткое описание вашего магазина"
+          />
           <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
           <Input label="Телефон" {...register('phone')} />
           <Textarea label="Адрес" {...register('address')} rows={2} />
@@ -162,6 +184,25 @@ function GeneralTab() {
                   onChange={field.onChange}
                 />
               )}
+            />
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Социальные сети</p>
+            <Input
+              label="Instagram URL"
+              {...register('socialLinks.instagram')}
+              placeholder="https://instagram.com/store"
+            />
+            <Input
+              label="Telegram URL"
+              {...register('socialLinks.telegram')}
+              placeholder="https://t.me/store"
+            />
+            <Input
+              label="ВКонтакте URL"
+              {...register('socialLinks.vk')}
+              placeholder="https://vk.com/store"
             />
           </div>
 

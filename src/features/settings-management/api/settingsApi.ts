@@ -10,14 +10,22 @@ export interface NotificationSettings {
   refundRequest: boolean;
 }
 
+export interface SocialLinks {
+  instagram?: string;
+  telegram?: string;
+  vk?: string;
+}
+
 export interface StoreSettings {
   id: string;
   storeName: string;
+  description: string;
   email: string;
   phone: string;
   address: string;
   currency: string;
   language: string;
+  socialLinks: SocialLinks | null;
   notifications: NotificationSettings | null;
   notificationEmail: string | null;
   createdAt: string;
