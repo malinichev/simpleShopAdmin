@@ -12,6 +12,7 @@ export function useStartImport() {
       mapping: Record<string, string>;
       defaultStatus?: string;
       skipDuplicates?: boolean;
+      duplicateResolutions?: Record<string, 'db' | 'csv'>;
     }) => importApi.start(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: importKeys.jobs() });

@@ -23,6 +23,27 @@ export interface ImportJob {
   updatedAt: string;
 }
 
+export interface DuplicateMatch {
+  csvRowNum: number;
+  csvName: string;
+  csvSku: string;
+  matchedBy: 'sku' | 'name';
+  product: {
+    id: string;
+    name: string;
+    sku: string;
+    description: string;
+    shortDescription: string;
+    images: Array<{ id: string; url: string; alt: string; order: number }>;
+  };
+}
+
+export interface DetectDuplicatesResult {
+  duplicates: DuplicateMatch[];
+  newProductsCount: number;
+  totalCsvRows: number;
+}
+
 interface PaginatedImportJobs {
   data: ImportJob[];
   meta: {
@@ -50,8 +71,17 @@ export const importApi = {
     mapping: Record<string, string>;
     defaultStatus?: string;
     skipDuplicates?: boolean;
+    duplicateResolutions?: Record<string, 'db' | 'csv'>;
   }): Promise<ImportJob> => {
     const { data } = await api.post<ImportJob>('/import/start', params);
+    return data;
+  },
+
+  detectDuplicates: async (params: {
+    fileKey: string;
+    mapping: Record<string, string>;
+  }): Promise<DetectDuplicatesResult> => {
+    const { data } = await api.post<DetectDuplicatesResult>('/import/detect-duplicates', params);
     return data;
   },
 

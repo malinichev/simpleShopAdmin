@@ -11,14 +11,24 @@ import {
   ImportPreview,
   ImportProgress,
   ImportHistory,
+  DuplicatesStep,
   importApi,
   useImportPreview,
   useStartImport,
+  useDetectDuplicates,
   useImportJob,
   type ImportPreviewResult,
+  type DetectDuplicatesResult,
 } from '@/features/import-products';
 
-type Step = 'upload' | 'mapping' | 'progress';
+type Step = 'upload' | 'mapping' | 'duplicates' | 'progress';
+
+const STEPS: { key: Step; label: string }[] = [
+  { key: 'upload', label: '1. Загрузка' },
+  { key: 'mapping', label: '2. Маппинг' },
+  { key: 'duplicates', label: '3. Дубликаты' },
+  { key: 'progress', label: '4. Результат' },
+];
 
 export function ImportProductsPage() {
   const navigate = useNavigate();
@@ -26,16 +36,18 @@ export function ImportProductsPage() {
   const [preview, setPreview] = useState<ImportPreviewResult | null>(null);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [jobId, setJobId] = useState('');
+  const [duplicatesResult, setDuplicatesResult] = useState<DetectDuplicatesResult | null>(null);
+  const [duplicateResolutions, setDuplicateResolutions] = useState<Record<string, 'db' | 'csv'>>({});
 
   const previewMutation = useImportPreview();
   const startMutation = useStartImport();
+  const detectDuplicatesMutation = useDetectDuplicates();
   const { data: activeJob } = useImportJob(jobId);
 
   const handleFileSelect = (file: File) => {
     previewMutation.mutate(file, {
       onSuccess: (result) => {
         setPreview(result);
-        // Auto-detect mapping
         const autoMapping: Record<string, string> = {};
         result.headers.forEach((h) => {
           const detected = autoDetectField(h);
@@ -47,14 +59,35 @@ export function ImportProductsPage() {
     });
   };
 
+  const handleDetectDuplicates = () => {
+    if (!preview) return;
+    detectDuplicatesMutation.mutate(
+      { fileKey: preview.fileKey, mapping },
+      {
+        onSuccess: (result) => {
+          setDuplicatesResult(result);
+          // Default all to 'db'
+          const defaultResolutions: Record<string, 'db' | 'csv'> = {};
+          for (const d of result.duplicates) {
+            defaultResolutions[d.product.id] = 'db';
+          }
+          setDuplicateResolutions(defaultResolutions);
+          setStep('duplicates');
+        },
+      },
+    );
+  };
+
   const handleStartImport = () => {
     if (!preview) return;
+    const hasDuplicates = duplicatesResult && duplicatesResult.duplicates.length > 0;
     startMutation.mutate(
       {
         fileKey: preview.fileKey,
         mapping,
         defaultStatus: 'draft',
-        skipDuplicates: true,
+        skipDuplicates: !hasDuplicates,
+        ...(hasDuplicates ? { duplicateResolutions } : {}),
       },
       {
         onSuccess: (job) => {
@@ -101,19 +134,17 @@ export function ImportProductsPage() {
 
       {/* Steps */}
       <div className="flex items-center gap-2 text-sm">
-        {(['upload', 'mapping', 'progress'] as const).map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
+        {STEPS.map((s, i) => (
+          <div key={s.key} className="flex items-center gap-2">
             {i > 0 && <span className="text-gray-300 dark:text-gray-600">/</span>}
             <span
               className={`${
-                step === s
+                step === s.key
                   ? 'font-medium text-primary-600 dark:text-primary-400'
                   : 'text-gray-400'
               }`}
             >
-              {s === 'upload' && '1. Загрузка'}
-              {s === 'mapping' && '2. Маппинг'}
-              {s === 'progress' && '3. Результат'}
+              {s.label}
             </span>
           </div>
         ))}
@@ -172,18 +203,44 @@ export function ImportProductsPage() {
                 Сопоставлено: {mappedFieldsCount} колонок
               </span>
               <Button
-                onClick={handleStartImport}
-                loading={startMutation.isPending}
+                onClick={handleDetectDuplicates}
+                loading={detectDuplicatesMutation.isPending}
                 disabled={mappedFieldsCount === 0}
               >
-                Начать импорт ({preview.totalRows} строк)
+                Далее ({preview.totalRows} строк)
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Step 3: Progress */}
+      {/* Step 3: Duplicates */}
+      {step === 'duplicates' && duplicatesResult && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Проверка дубликатов</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DuplicatesStep
+                result={duplicatesResult}
+                resolutions={duplicateResolutions}
+                onResolutionsChange={setDuplicateResolutions}
+                onStartImport={handleStartImport}
+                isLoading={startMutation.isPending}
+              />
+            </CardContent>
+          </Card>
+
+          <div className="flex items-center">
+            <Button variant="outline" onClick={() => setStep('mapping')}>
+              Назад
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Progress */}
       {step === 'progress' && activeJob && (
         <Card>
           <CardHeader>
