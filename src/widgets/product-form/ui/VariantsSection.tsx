@@ -16,7 +16,7 @@ export function VariantsSection() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ id: '', size: '', sku: '', stock: 0, price: undefined })}
+          onClick={() => append({ id: '', size: '', sku: '', stock: 0, price: undefined, gtin: '' })}
         >
           <Plus className="h-4 w-4" />
           Добавить вариант
@@ -36,6 +36,7 @@ export function VariantsSection() {
                   <th className="pb-2 pr-3 text-left font-medium text-gray-500">SKU</th>
                   <th className="pb-2 pr-3 text-left font-medium text-gray-500">Остаток</th>
                   <th className="pb-2 pr-3 text-left font-medium text-gray-500">Цена (₽)</th>
+                  <th className="pb-2 pr-3 text-left font-medium text-gray-500">GTIN</th>
                   <th className="pb-2 w-10" />
                 </tr>
               </thead>
@@ -75,6 +76,13 @@ export function VariantsSection() {
                           {...register(`variants.${index}.price`)}
                           placeholder="—"
                           className={inputClass(variantErrors?.price, 'w-24')}
+                        />
+                      </td>
+                      <td className="py-2 pr-3">
+                        <input
+                          {...register(`variants.${index}.gtin`)}
+                          placeholder="GTIN"
+                          className={inputClass(variantErrors?.gtin, 'w-32')}
                         />
                       </td>
                       <td className="py-2">

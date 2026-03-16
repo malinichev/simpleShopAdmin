@@ -156,12 +156,19 @@ export function BasicInfoSection() {
             placeholder="Полиэстер 90%, Эластан 10%"
           />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Input
               label="SKU"
               {...register('sku')}
               error={errors.sku?.message}
               placeholder="ART-001"
+            />
+
+            <Input
+              label="GTIN (Честный знак)"
+              {...register('gtin')}
+              error={errors.gtin?.message}
+              placeholder="4607123456789"
             />
 
             <Controller

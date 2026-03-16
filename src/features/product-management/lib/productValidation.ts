@@ -13,6 +13,7 @@ export const variantSchema = z.object({
   sku: z.string().min(1, 'SKU обязателен'),
   stock: z.coerce.number().min(0, 'Остаток не может быть отрицательным'),
   price: z.coerce.number().min(0).optional(),
+  gtin: z.string().regex(/^\d{8,14}$/, 'GTIN: 8-14 цифр').optional().or(z.literal('')).default(''),
 });
 
 export const productSchema = z.object({
@@ -32,6 +33,7 @@ export const productSchema = z.object({
   color: z.string().optional().default(''),
   colorHex: z.string().optional().default('#000000'),
   modelId: z.string().optional().default(''),
+  gtin: z.string().regex(/^\d{8,14}$/, 'GTIN: 8-14 цифр').optional().or(z.literal('')).default(''),
   images: z.array(imageSchema).default([]),
   variants: z.array(variantSchema).default([]),
   metaTitle: z.string().max(70, 'Макс. 70 символов').optional(),

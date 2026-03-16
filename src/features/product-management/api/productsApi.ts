@@ -29,6 +29,7 @@ function toApiPayload(formData: ProductFormData) {
     color: formData.color || undefined,
     colorHex: formData.colorHex || undefined,
     modelId: formData.modelId || undefined,
+    gtin: formData.gtin || undefined,
     images: formData.images.map((img, i) => ({
       id: img.id,
       url: img.url,
@@ -41,6 +42,7 @@ function toApiPayload(formData: ProductFormData) {
       sku: v.sku,
       stock: v.stock,
       price: v.price,
+      gtin: v.gtin || undefined,
     })),
     attributes: {
       material: formData.material,

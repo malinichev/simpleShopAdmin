@@ -13,6 +13,7 @@ export interface ProductVariant {
   sku: string;
   stock: number;
   price?: number;
+  gtin?: string;
 }
 
 export interface ProductAttributes {
@@ -56,6 +57,7 @@ export interface Product {
   color?: string;
   colorHex?: string;
   modelId?: string | null;
+  gtin?: string;
   createdAt: string;
   updatedAt: string;
 }

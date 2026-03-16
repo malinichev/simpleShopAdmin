@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Upload } from 'lucide-react';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -80,12 +80,20 @@ export function ProductsPage() {
             Управление каталогом товаров
           </p>
         </div>
-        <Button asChild>
-          <Link to={ROUTES.PRODUCT_NEW}>
-            <Plus className="h-4 w-4" />
-            Добавить товар
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to={ROUTES.IMPORT_PRODUCTS}>
+              <Upload className="h-4 w-4" />
+              Импорт CSV
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to={ROUTES.PRODUCT_NEW}>
+              <Plus className="h-4 w-4" />
+              Добавить товар
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Toolbar */}

@@ -53,6 +53,12 @@ const PagesPage = lazy(() =>
 const PageEditPage = lazy(() =>
   import('@/pages/page-edit').then((m) => ({ default: m.PageEditPage })),
 );
+const MarkingPage = lazy(() =>
+  import('@/pages/marking').then((m) => ({ default: m.MarkingPage })),
+);
+const ImportProductsPage = lazy(() =>
+  import('@/pages/import-products').then((m) => ({ default: m.ImportProductsPage })),
+);
 
 function PageLoader() {
   return (
@@ -80,6 +86,8 @@ export function AppRoutes() {
             <Route path={ROUTES.CUSTOMERS} element={<CustomersPage />} />
             <Route path={ROUTES.REVIEWS} element={<ReviewsPage />} />
             <Route path={ROUTES.PROMOTIONS} element={<PromotionsPage />} />
+            <Route path={ROUTES.MARKING} element={<MarkingPage />} />
+            <Route path={ROUTES.IMPORT_PRODUCTS} element={<ImportProductsPage />} />
             <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
             <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />

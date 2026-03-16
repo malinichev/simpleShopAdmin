@@ -13,6 +13,8 @@ export const ROUTES = {
   ANALYTICS: '/analytics',
   SETTINGS: '/settings',
   VERIFY_EMAIL: '/verify-email',
+  MARKING: '/marking',
+  IMPORT_PRODUCTS: '/products/import',
   PAGES: '/pages',
   PAGE_EDIT: '/pages/:slug/edit',
 } as const;
