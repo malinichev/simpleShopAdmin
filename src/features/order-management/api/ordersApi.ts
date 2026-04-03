@@ -39,4 +39,9 @@ export const ordersApi = {
     const { data } = await api.patch<Order>(`/orders/${id}`, { adminNote });
     return data;
   },
+
+  getOrderMarkingCodes: async (orderId: string) => {
+    const { data } = await api.get(`/orders/${orderId}/marking-codes`);
+    return data;
+  },
 };

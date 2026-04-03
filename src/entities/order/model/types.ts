@@ -8,6 +8,13 @@ export interface OrderUser {
   phone?: string;
 }
 
+export interface MarkingCodeSnapshot {
+  id: string;
+  code: string;
+  gtin: string;
+  serial: string;
+}
+
 export interface OrderItem {
   productId: string;
   variantId: string;
@@ -19,6 +26,8 @@ export interface OrderItem {
   price: number;
   quantity: number;
   total: number;
+  markingCodes?: MarkingCodeSnapshot[];
+  markingCodesAssigned?: boolean;
 }
 
 export interface OrderHistoryEvent {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Printer, RefreshCw, User, MapPin, StickyNote, CreditCard } from 'lucide-react';
+import { ArrowLeft, Printer, RefreshCw, User, MapPin, StickyNote, CreditCard, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
@@ -126,6 +126,63 @@ export function OrderDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Marking Codes (Честный знак) */}
+          {order.items.some((item) => item.markingCodes && item.markingCodes.length > 0) && (
+            <Card>
+              <CardHeader className="flex-row items-center gap-2 space-y-0">
+                <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                <CardTitle>Коды маркировки</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {order.items.map((item, index) => {
+                    if (!item.markingCodes || item.markingCodes.length === 0) return null;
+                    return (
+                      <div key={`marking-${index}`}>
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {item.name}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            ({item.size}{item.color ? `, ${item.color}` : ''})
+                          </span>
+                          {item.markingCodesAssigned ? (
+                            <Badge variant="success" className="text-xs">
+                              <ShieldCheck className="mr-1 h-3 w-3" />
+                              {item.markingCodes.length}/{item.quantity}
+                            </Badge>
+                          ) : (
+                            <Badge variant="warning" className="text-xs">
+                              <AlertTriangle className="mr-1 h-3 w-3" />
+                              {item.markingCodes.length}/{item.quantity}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          {item.markingCodes.map((mc) => (
+                            <div
+                              key={mc.id}
+                              className="flex items-center gap-3 rounded-md bg-gray-50 px-3 py-1.5 text-xs dark:bg-gray-800"
+                            >
+                              <code className="flex-1 truncate font-mono text-gray-700 dark:text-gray-300">
+                                {mc.code}
+                              </code>
+                              {mc.gtin && (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  GTIN: {mc.gtin}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Order Summary */}
           <Card>

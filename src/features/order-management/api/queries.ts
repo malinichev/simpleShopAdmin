@@ -6,6 +6,8 @@ export const orderKeys = {
   list: (params: OrderQueryParams) => [...orderKeys.lists(), params] as const,
   details: () => [...orderKeys.all, 'detail'] as const,
   detail: (id: string) => [...orderKeys.details(), id] as const,
+  markingCodes: (id: string) =>
+    [...orderKeys.all, 'marking-codes', id] as const,
 };
 
 export const userKeys = {
