@@ -34,6 +34,7 @@ export const productSchema = z.object({
   colorHex: z.string().optional().default('#000000'),
   modelId: z.string().optional().default(''),
   gtin: z.string().regex(/^\d{8,14}$/, 'GTIN: 8-14 цифр').optional().or(z.literal('')).default(''),
+  requiresMarking: z.boolean().default(false),
   images: z.array(imageSchema).default([]),
   variants: z.array(variantSchema).default([]),
   metaTitle: z.string().max(70, 'Макс. 70 символов').optional(),

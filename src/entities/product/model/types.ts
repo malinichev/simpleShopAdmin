@@ -54,6 +54,7 @@ export interface Product {
   status: ProductStatus;
   seo: ProductSEO;
   isVisible: boolean;
+  requiresMarking: boolean;
   color?: string;
   colorHex?: string;
   modelId?: string | null;

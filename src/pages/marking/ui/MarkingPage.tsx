@@ -17,7 +17,7 @@ export function MarkingPage() {
 
   const { data: products } = useQuery({
     queryKey: ['products-for-marking'],
-    queryFn: () => productsApi.getProducts({ limit: 500 }),
+    queryFn: () => productsApi.getProducts({ limit: 100 }),
   });
 
   const productOptions = useMemo(

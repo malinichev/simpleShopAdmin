@@ -186,6 +186,18 @@ export function BasicInfoSection() {
             />
           </div>
 
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="requiresMarking"
+              {...register('requiresMarking')}
+              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800"
+            />
+            <label htmlFor="requiresMarking" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Подлежит маркировке (Честный знак)
+            </label>
+          </div>
+
           <Controller
             control={control}
             name="status"

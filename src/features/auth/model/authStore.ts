@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   verifyEmail: async (credentials) => {
     await authApi.verifyEmail(credentials);
-    set({  isEmailVerified: true });
+    set({ isEmailVerified: true });
   },
 
   logout: async () => {

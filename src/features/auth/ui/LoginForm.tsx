@@ -38,7 +38,7 @@ export function LoginForm() {
     } catch (error: unknown) {
       if (isAxiosError(error)) {
         const message =
-          error.response?.data?.error?.message ?? 'Неверный email или пароль';
+          error.response?.data?.message ?? 'Неверный email или пароль';
         setApiError(message);
       } else {
         setApiError('Произошла ошибка. Попробуйте позже.');

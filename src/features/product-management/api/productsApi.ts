@@ -30,6 +30,7 @@ function toApiPayload(formData: ProductFormData) {
     colorHex: formData.colorHex || undefined,
     modelId: formData.modelId || undefined,
     gtin: formData.gtin || undefined,
+    requiresMarking: formData.requiresMarking,
     images: formData.images.map((img, i) => ({
       id: img.id,
       url: img.url,

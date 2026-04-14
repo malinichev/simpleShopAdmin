@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import type { ProductFormData } from '@/features/product-management';
 
 export function VariantsSection() {
-  const { register, control, formState: { errors } } = useFormContext<ProductFormData>();
+  const { register, control, watch, formState: { errors } } = useFormContext<ProductFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: 'variants' });
+  const requiresMarking = watch('requiresMarking');
 
   return (
     <Card>
@@ -60,13 +61,24 @@ export function VariantsSection() {
                         />
                       </td>
                       <td className="py-2 pr-3">
-                        <input
-                          type="number"
-                          min="0"
-                          {...register(`variants.${index}.stock`)}
-                          placeholder="0"
-                          className={inputClass(variantErrors?.stock, 'w-20')}
-                        />
+                        {requiresMarking ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400" title="Stock рассчитывается автоматически по кодам маркировки">
+                            <input
+                              type="number"
+                              {...register(`variants.${index}.stock`)}
+                              disabled
+                              className={inputClass(undefined, 'w-20 opacity-60 cursor-not-allowed')}
+                            />
+                          </span>
+                        ) : (
+                          <input
+                            type="number"
+                            min="0"
+                            {...register(`variants.${index}.stock`)}
+                            placeholder="0"
+                            className={inputClass(variantErrors?.stock, 'w-20')}
+                          />
+                        )}
                       </td>
                       <td className="py-2 pr-3">
                         <input
