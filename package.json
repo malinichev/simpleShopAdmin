@@ -37,7 +37,7 @@
     "@tiptap/react": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
     "autoprefixer": "^10.4.24",
-    "axios": "^1.13.5",
+    "axios": "^1.15.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.563.0",
@@ -72,5 +72,18 @@
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1"
   },
-  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8"
+  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8",
+  "pnpm": {
+    "overrides": {
+      "picomatch": ">=4.0.4",
+      "lodash": ">=4.18.1",
+      "immutable": ">=5.1.5",
+      "basic-ftp": ">=5.3.0",
+      "rollup": ">=4.59.0",
+      "vite": ">=7.3.2",
+      "follow-redirects": ">=1.16.0",
+      "axios": ">=1.15.0",
+      "dompurify": ">=3.4.0"
+    }
+  }
 }
