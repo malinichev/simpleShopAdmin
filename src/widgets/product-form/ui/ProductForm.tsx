@@ -1,6 +1,14 @@
-import { useForm, FormProvider, type UseFormReturn, type Resolver } from 'react-hook-form';
-import { useEffect } from 'react';
+import {
+  useForm,
+  FormProvider,
+  type UseFormReturn,
+  type Resolver,
+  type FieldErrors,
+  type Path,
+} from 'react-hook-form';
+import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import {
   productSchema,
@@ -13,8 +21,11 @@ import { VariantsSection } from './VariantsSection';
 import { ImagesSection } from './ImagesSection';
 import { SeoSection } from './SeoSection';
 
+type TabId = 'basic' | 'pricing' | 'images' | 'seo';
+
 export interface ProductFormHandle {
   getForm: () => UseFormReturn<ProductFormData>;
+  submit: (status: 'draft' | 'active') => void;
 }
 
 interface ProductFormProps {
@@ -22,6 +33,93 @@ interface ProductFormProps {
   onSubmit: (data: ProductFormData) => void;
   isSubmitting?: boolean;
   formRef?: React.MutableRefObject<ProductFormHandle | null>;
+}
+
+const FIELD_TO_TAB: Record<string, TabId> = {
+  name: 'basic',
+  slug: 'basic',
+  sku: 'basic',
+  categoryId: 'basic',
+  shortDescription: 'basic',
+  description: 'basic',
+  material: 'basic',
+  activityTypes: 'basic',
+  features: 'basic',
+  tags: 'basic',
+  color: 'basic',
+  colorHex: 'basic',
+  modelId: 'basic',
+  gtin: 'basic',
+  requiresMarking: 'basic',
+  price: 'pricing',
+  comparePrice: 'pricing',
+  variants: 'pricing',
+  images: 'images',
+  metaTitle: 'seo',
+  metaDescription: 'seo',
+  metaKeywords: 'seo',
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  name: 'Название',
+  slug: 'URL (slug)',
+  sku: 'SKU',
+  categoryId: 'Категория',
+  shortDescription: 'Краткое описание',
+  description: 'Описание',
+  material: 'Материал',
+  activityTypes: 'Виды активности',
+  features: 'Особенности',
+  tags: 'Теги',
+  color: 'Цвет',
+  colorHex: 'Цвет (HEX)',
+  modelId: 'ID модели',
+  gtin: 'GTIN',
+  price: 'Цена',
+  comparePrice: 'Цена до скидки',
+  variants: 'Варианты',
+  images: 'Изображения',
+  metaTitle: 'Meta Title',
+  metaDescription: 'Meta Description',
+  metaKeywords: 'Meta Keywords',
+};
+
+function collectErrorMessages(
+  errors: FieldErrors,
+  pathPrefix = '',
+): string[] {
+  const messages: string[] = [];
+  for (const key of Object.keys(errors)) {
+    const node = (errors as Record<string, unknown>)[key];
+    if (!node || typeof node !== 'object') continue;
+
+    const currentPath = pathPrefix ? `${pathPrefix}.${key}` : key;
+    const maybeMessage = (node as { message?: unknown }).message;
+    if (typeof maybeMessage === 'string' && maybeMessage.length > 0) {
+      const label = pathPrefix
+        ? currentPath
+        : FIELD_LABELS[key] ?? key;
+      messages.push(`${label}: ${maybeMessage}`);
+      continue;
+    }
+
+    if (Array.isArray(node)) {
+      node.forEach((item, idx) => {
+        if (item && typeof item === 'object') {
+          messages.push(
+            ...collectErrorMessages(
+              item as FieldErrors,
+              `${FIELD_LABELS[key] ?? key}[${idx + 1}]`,
+            ),
+          );
+        }
+      });
+      continue;
+    }
+
+    messages.push(...collectErrorMessages(node as FieldErrors, currentPath));
+  }
+  return messages;
 }
 
 function productToFormData(product: Product): ProductFormData {
@@ -67,7 +165,8 @@ function productToFormData(product: Product): ProductFormData {
 }
 
 export function ProductForm({ initialData, onSubmit, isSubmitting, formRef }: ProductFormProps) {
-  const resolver: Resolver<ProductFormData> = zodResolver(productSchema) as Resolver<ProductFormData>
+  const resolver: Resolver<ProductFormData> = zodResolver(productSchema) as Resolver<ProductFormData>;
+  const [activeTab, setActiveTab] = useState<TabId>('basic');
 
   const form = useForm<ProductFormData>({
     resolver,
@@ -92,19 +191,50 @@ export function ProductForm({ initialData, onSubmit, isSubmitting, formRef }: Pr
       images: [],
       variants: [],
       metaKeywords: [],
-    }
+    },
   });
 
   useEffect(() => {
-    if (formRef) {
-      formRef.current = { getForm: () => form };
+    if (initialData) {
+      form.reset(productToFormData(initialData));
     }
+  }, [initialData, form]);
+
+  const onInvalid = (errors: FieldErrors<ProductFormData>) => {
+    const firstField = Object.keys(errors)[0];
+    if (firstField) {
+      const targetTab = FIELD_TO_TAB[firstField] ?? 'basic';
+      setActiveTab(targetTab);
+      try {
+        form.setFocus(firstField as Path<ProductFormData>);
+      } catch {
+        // setFocus может упасть на полях-массивах — не страшно
+      }
+    }
+
+    const messages = collectErrorMessages(errors).slice(0, 5);
+    toast.error('Не удалось сохранить — проверьте форму', {
+      description: messages.length > 0 ? messages.join('\n') : undefined,
+    });
+  };
+
+  useEffect(() => {
+    if (!formRef) return;
+    formRef.current = {
+      getForm: () => form,
+      submit: (status) => {
+        form.setValue('status', status);
+        form.handleSubmit(onSubmit, onInvalid)();
+      },
+    };
+    // onSubmit/onInvalid читаются через замыкание — обновляем ref при смене form
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, formRef]);
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="product-form" className="space-y-6">
-        <Tabs defaultValue="basic">
+      <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} id="product-form" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
           <TabsList>
             <TabsTrigger value="basic">Основное</TabsTrigger>
             <TabsTrigger value="pricing">Цены и варианты</TabsTrigger>
@@ -130,8 +260,7 @@ export function ProductForm({ initialData, onSubmit, isSubmitting, formRef }: Pr
           </TabsContent>
         </Tabs>
 
-        {/* Hidden submit for keyboard Enter — actual buttons are in the page */}
-        <input type="submit" hidden disabled={isSubmitting} />
+        <button type="submit" hidden disabled={isSubmitting} aria-hidden="true" tabIndex={-1} />
       </form>
     </FormProvider>
   );

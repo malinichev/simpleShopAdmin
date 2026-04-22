@@ -37,14 +37,6 @@ export function ProductEditPage() {
     }
   };
 
-  const handleSaveDraft = () => {
-    const handle = formRef.current;
-    if (!handle) return;
-    const form = handle.getForm();
-    form.setValue('status', 'draft');
-    form.handleSubmit(handleSubmit)();
-  };
-
   if (isEdit && isLoading) {
     return (
       <div className="space-y-6">
@@ -95,15 +87,15 @@ export function ProductEditPage() {
         <Button
           type="button"
           variant="secondary"
-          onClick={handleSaveDraft}
+          onClick={() => formRef.current?.submit('draft')}
           loading={isSubmitting}
         >
           <Save className="h-4 w-4" />
           Сохранить как черновик
         </Button>
         <Button
-          type="submit"
-          form="product-form"
+          type="button"
+          onClick={() => formRef.current?.submit('active')}
           loading={isSubmitting}
         >
           <Globe className="h-4 w-4" />

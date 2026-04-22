@@ -66,7 +66,6 @@ export const productsApi = {
 
   getProduct: async (id: string): Promise<Product> => {
     const { data } = await api.get<Product>(`/products/${id}`);
-    console.log({data})
     return data;
   },
 
