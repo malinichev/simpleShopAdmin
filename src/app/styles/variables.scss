@@ -1,7 +1,8 @@
-// Colors
-$primary: #10b981;
-$primary-light: #34d399;
-$primary-dark: #059669;
+// Colors — источник правды: admin/src/shared/config/theme.ts + tailwind.css (@theme).
+// SCSS-переменные ссылаются на CSS-переменные, чтобы при смене темы перекраска шла из одного места.
+$primary: var(--color-primary-500);
+$primary-light: var(--color-primary-400);
+$primary-dark: var(--color-primary-600);
 
 // Typography
 $font-family-base: 'Inter', system-ui, -apple-system, sans-serif;

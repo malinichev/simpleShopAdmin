@@ -15,6 +15,7 @@ import { cn } from '@/shared/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui';
 import { formatRUB } from '@/shared/lib/utils/currency';
+import { theme } from '@/shared/config';
 import { useSales, type Granularity } from '@/features/analytics';
 
 type Period = '7d' | '30d' | '12m';
@@ -122,21 +123,21 @@ export function SalesChart() {
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="5%" stopColor={theme.charts.primary} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={theme.charts.primary} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
                 <XAxis
                   dataKey="label"
                   className="text-xs"
-                  tick={{ fill: '#9ca3af' }}
+                  tick={{ fill: theme.charts.axisTick }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
                   className="text-xs"
-                  tick={{ fill: '#9ca3af' }}
+                  tick={{ fill: theme.charts.axisTick }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(value: number) =>
@@ -159,7 +160,7 @@ export function SalesChart() {
                 <Area
                   type="monotone"
                   dataKey="sales"
-                  stroke="#10b981"
+                  stroke={theme.charts.primary}
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#salesGradient)"

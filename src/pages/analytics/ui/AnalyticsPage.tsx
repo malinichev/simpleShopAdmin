@@ -38,6 +38,7 @@ import { DateRangePicker } from '@/shared/ui/date-picker';
 import { cn } from '@/shared/lib/utils';
 import { formatRUB } from '@/shared/lib/utils/currency';
 import { ExportButton } from '@/features/export-data';
+import { theme } from '@/shared/config';
 import {
   useDashboard,
   useSales,
@@ -125,7 +126,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 
 // --- Category chart colors ---
 
-const CATEGORY_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
+const CATEGORY_COLORS = theme.charts.category;
 
 // --- CSV Export ---
 
@@ -391,19 +392,19 @@ export function AnalyticsPage() {
                 <AreaChart data={salesChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <stop offset="5%" stopColor={theme.charts.primary} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={theme.charts.primary} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    tick={{ fill: theme.charts.axisTick, fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    tick={{ fill: theme.charts.axisTick, fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v: number) =>
@@ -433,7 +434,7 @@ export function AnalyticsPage() {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#10b981"
+                    stroke={theme.charts.primary}
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#revenueGradient)"
@@ -521,7 +522,7 @@ export function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" horizontal={false} />
                     <XAxis
                       type="number"
-                      tick={{ fill: '#9ca3af', fontSize: 12 }}
+                      tick={{ fill: theme.charts.axisTick, fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v: number) =>
@@ -532,7 +533,7 @@ export function AnalyticsPage() {
                       type="category"
                       dataKey="name"
                       width={120}
-                      tick={{ fill: '#9ca3af', fontSize: 12 }}
+                      tick={{ fill: theme.charts.axisTick, fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                     />
