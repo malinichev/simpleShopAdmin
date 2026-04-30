@@ -2,6 +2,7 @@ import { useFormContext, Controller } from 'react-hook-form';
 import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { brand } from '@/shared/config';
 import type { ProductFormData } from '@/features/product-management';
 import { TagsInput } from './TagsInput';
 
@@ -14,7 +15,7 @@ export function SeoSection() {
   const slug = watch('slug');
 
   const previewTitle = metaTitle || name || 'Название товара';
-  const previewUrl = `sportshop.ru/products/${slug || 'url-tovara'}`;
+  const previewUrl = `${brand.storefrontHost}/products/${slug || 'url-tovara'}`;
   const previewDescription = metaDescription || 'Описание товара будет отображено здесь...';
 
   return (

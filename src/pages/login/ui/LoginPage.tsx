@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { LoginForm, useAuthStore } from '@/features/auth';
-import { ROUTES } from '@/shared/config';
+import { ROUTES, brand, getBrandInitials } from '@/shared/config';
 
 export function LoginPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -16,10 +16,10 @@ export function LoginPage() {
           {/* Logo */}
           <div className="mb-8 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-500 text-xl font-bold text-white shadow-lg shadow-primary-500/30">
-              SS
+              {getBrandInitials()}
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              SportShop Admin
+              {brand.appName}
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Войдите в панель управления
@@ -30,7 +30,7 @@ export function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500">
-          SportShop &copy; {new Date().getFullYear()}
+          {brand.name} &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>

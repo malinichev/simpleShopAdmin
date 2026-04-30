@@ -51,7 +51,7 @@ export function LoginForm() {
       <Input
         label="Email"
         type="email"
-        placeholder="admin@sportshop.ru"
+        placeholder="admin@example.com"
         leftIcon={<Mail className="h-4 w-4" />}
         error={errors.email?.message}
         {...register('email')}

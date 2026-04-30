@@ -16,7 +16,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { ROUTES } from '@/shared/config';
+import { ROUTES, brand, getBrandInitials } from '@/shared/config';
 import { useAuth } from '@/features/auth';
 
 const navItems = [
@@ -52,11 +52,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="flex h-16 items-center border-b border-gray-200 px-4 dark:border-gray-700">
         <div className="flex items-center gap-3 overflow-hidden">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-500 text-white font-bold text-sm">
-            SS
+            {getBrandInitials()}
           </div>
           {!collapsed && (
             <span className="whitespace-nowrap text-lg font-semibold text-gray-900 dark:text-white">
-              SportShop
+              {brand.shortName}
             </span>
           )}
         </div>
