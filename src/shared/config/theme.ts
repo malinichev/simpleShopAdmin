@@ -11,6 +11,8 @@ export interface ThemePalette {
   900: string;
   950: string;
   DEFAULT: string;
+  /** Index signature для совместимости с Tailwind RecursiveKeyValuePair (если использовать в TS-config) */
+  [key: string]: string;
 }
 
 export interface AdminTheme {
