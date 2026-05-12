@@ -423,9 +423,24 @@ function ShippingTab() {
 // Payment Tab
 // ============================================================
 
+const PAYMENT_PROVIDER_VALUES = [
+  'manual',
+  'yookassa',
+  'stripe',
+  'cloudpayments',
+] as const;
+
+const PAYMENT_PROVIDER_LABELS: Record<(typeof PAYMENT_PROVIDER_VALUES)[number], string> = {
+  manual: 'Manual (без шлюза, отметить вручную)',
+  yookassa: 'YooKassa',
+  stripe: 'Stripe',
+  cloudpayments: 'CloudPayments',
+};
+
 const paymentSchema = z.object({
   name: z.string().min(1, 'Название обязательно'),
   description: z.string().optional(),
+  provider: z.enum(PAYMENT_PROVIDER_VALUES),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -448,18 +463,28 @@ function PaymentTab() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<PaymentFormData>({
     resolver,
   });
+
+  const providerOptions = PAYMENT_PROVIDER_VALUES.map((p) => ({
+    value: p,
+    label: PAYMENT_PROVIDER_LABELS[p],
+  }));
 
   const openForm = useCallback(
     (method?: PaymentMethodType) => {
       setEditMethod(method ?? null);
       reset(
         method
-          ? { name: method.name, description: method.description }
-          : { name: '', description: '' },
+          ? {
+              name: method.name,
+              description: method.description,
+              provider: method.provider,
+            }
+          : { name: '', description: '', provider: 'manual' },
       );
       setFormOpen(true);
     },
@@ -526,6 +551,9 @@ function PaymentTab() {
                       Название
                     </th>
                     <th className="pb-3 text-left font-medium text-gray-500 dark:text-gray-400">
+                      Провайдер
+                    </th>
+                    <th className="pb-3 text-left font-medium text-gray-500 dark:text-gray-400">
                       Описание
                     </th>
                     <th className="pb-3 text-center font-medium text-gray-500 dark:text-gray-400">
@@ -543,6 +571,11 @@ function PaymentTab() {
                       className="border-b border-gray-100 last:border-0 dark:border-gray-800"
                     >
                       <td className="py-3 font-medium text-gray-900 dark:text-white">{m.name}</td>
+                      <td className="py-3">
+                        <Badge variant={m.provider === 'manual' ? 'secondary' : 'default'}>
+                          {m.provider}
+                        </Badge>
+                      </td>
                       <td className="py-3 text-gray-500 dark:text-gray-400">{m.description}</td>
                       <td className="py-3 text-center">
                         <Switch checked={m.isActive} onCheckedChange={() => toggleActive(m)} />
@@ -582,6 +615,25 @@ function PaymentTab() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input label="Название" {...register('name')} error={errors.name?.message} />
           <Textarea label="Описание" {...register('description')} rows={2} />
+          <div>
+            <Controller
+              control={control}
+              name="provider"
+              render={({ field }) => (
+                <Select
+                  label="Провайдер"
+                  options={providerOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Manual — оплата вне системы (отметьте админом). Прочие требуют credentials в env
+              (yookassa: YOOKASSA_SHOP_ID; stripe: STRIPE_SECRET_KEY; cloudpayments: CLOUDPAYMENTS_PUBLIC_ID).
+              На v1.0 шаблона non-manual провайдеры — stub, требуют доинтеграции.
+            </p>
+          </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
               Отмена

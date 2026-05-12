@@ -4,6 +4,7 @@ export type {
   NotificationSettings,
   ShippingMethod,
   PaymentMethod,
+  PaymentProvider,
   UpdateSettingsPayload,
   CreateShippingMethodPayload,
   UpdateShippingMethodPayload,

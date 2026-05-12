@@ -43,12 +43,20 @@ export interface ShippingMethod {
   updatedAt: string;
 }
 
+export type PaymentProvider =
+  | 'manual'
+  | 'yookassa'
+  | 'stripe'
+  | 'cloudpayments';
+
 export interface PaymentMethod {
   id: string;
   name: string;
   description: string;
   isActive: boolean;
   order: number;
+  provider: PaymentProvider;
+  config: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -72,6 +80,8 @@ export interface CreatePaymentMethodPayload {
   description?: string;
   isActive?: boolean;
   order?: number;
+  provider?: PaymentProvider;
+  config?: Record<string, unknown>;
 }
 
 export type UpdatePaymentMethodPayload = Partial<CreatePaymentMethodPayload>;
