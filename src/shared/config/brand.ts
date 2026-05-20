@@ -8,10 +8,10 @@ export interface Brand {
 }
 
 export const brand: Brand = {
-  name: 'SVOYA ESTHETICA',
-  shortName: 'SVOYA',
-  appName: 'SVOYA ESTHETICA Admin',
-  supportEmail: 'malinichev_s@mail.ru',
+  name: 'SVOY BRAND',
+  shortName: 'SVOY',
+  appName: 'SVOYA BRAND Admin',
+  supportEmail: 'order@gotov.site',
   storefrontHost: 'svoyaesthetica.shop',
 };
 
