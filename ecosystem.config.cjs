@@ -1,3 +1,6 @@
+// GENERATED from deploy/templates/ecosystem/admin.config.cjs.template
+// Do not edit manually. Run `cd deploy && pnpm run generate` after editing the template or .env.deploy.
+
 module.exports = {
   deploy: {
     production: {
