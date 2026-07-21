@@ -5,7 +5,7 @@ module.exports = {
   deploy: {
     production: {
       user: 'deploy',
-      host: '194.156.116.142',
+      host: '45.81.243.129',
       ref: 'origin/main',
       repo: 'git@github-admin:malinichev/simpleShopAdmin.git',
       path: '/var/www/simple-shop-admin',
