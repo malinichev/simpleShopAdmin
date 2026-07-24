@@ -12,7 +12,7 @@ export const brand: Brand = {
   shortName: 'SVOY',
   appName: 'SVOYA BRAND Admin',
   supportEmail: 'order@gotov.site',
-  storefrontHost: 'svoyaesthetica.shop',
+  storefrontHost: 'svoybrand.shop',
 };
 
 export function getBrandInitials(name: string = brand.shortName): string {
