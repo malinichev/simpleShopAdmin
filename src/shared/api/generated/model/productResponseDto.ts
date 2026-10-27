@@ -7,13 +7,13 @@
  */
 import type { CategoryBriefDto } from './categoryBriefDto';
 import type { ColorSiblingDto } from './colorSiblingDto';
+import type { ProductImageDto } from './productImageDto';
 import type { ProductResponseDtoAttributes } from './productResponseDtoAttributes';
 import type { ProductResponseDtoGtin } from './productResponseDtoGtin';
-import type { ProductResponseDtoImagesItem } from './productResponseDtoImagesItem';
 import type { ProductResponseDtoModelId } from './productResponseDtoModelId';
 import type { ProductResponseDtoSeo } from './productResponseDtoSeo';
 import type { ProductResponseDtoStatus } from './productResponseDtoStatus';
-import type { ProductResponseDtoVariantsItem } from './productResponseDtoVariantsItem';
+import type { ProductVariantDto } from './productVariantDto';
 
 export interface ProductResponseDto {
   id: string;
@@ -27,8 +27,8 @@ export interface ProductResponseDto {
   categoryId: string;
   category?: CategoryBriefDto;
   tags: string[];
-  images: ProductResponseDtoImagesItem[];
-  variants: ProductResponseDtoVariantsItem[];
+  images: ProductImageDto[];
+  variants: ProductVariantDto[];
   attributes: ProductResponseDtoAttributes;
   rating: number;
   reviewsCount: number;
