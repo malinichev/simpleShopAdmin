@@ -12,15 +12,30 @@ export interface UpdatePromotionDto {
   name?: string;
   description?: string;
   type?: UpdatePromotionDtoType;
-  /** Процент скидки или фиксированная сумма */
+  /**
+     * Процент скидки или фиксированная сумма
+     * @minimum 0
+     */
   value?: number;
-  /** Минимальная сумма заказа */
+  /**
+     * Минимальная сумма заказа
+     * @minimum 0
+     */
   minOrderAmount?: number;
-  /** Максимальная сумма скидки (для процентных) */
+  /**
+     * Максимальная сумма скидки (для процентных)
+     * @minimum 0
+     */
   maxDiscount?: number;
-  /** Общий лимит использований */
+  /**
+     * Общий лимит использований
+     * @minimum 1
+     */
   usageLimit?: number;
-  /** Лимит использований на пользователя */
+  /**
+     * Лимит использований на пользователя
+     * @minimum 1
+     */
   usageLimitPerUser?: number;
   /** ID категорий, к которым применяется промокод */
   categoryIds?: string[];

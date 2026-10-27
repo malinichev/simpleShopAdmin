@@ -10,7 +10,10 @@ export interface ProductVariantDto {
   id: string;
   size: string;
   sku: string;
+  /** @minimum 0 */
   stock: number;
+  /** @minimum 0 */
   price?: number;
+  /** @pattern /^\d{8,14}$/ */
   gtin?: string;
 }

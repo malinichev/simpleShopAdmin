@@ -11,6 +11,12 @@ export type MarkingControllerFindAllParams = {
 variantId?: string;
 productId?: string;
 status?: MarkingControllerFindAllStatus;
+/**
+ * @minimum 1
+ */
 page?: number;
+/**
+ * @minimum 1
+ */
 limit?: number;
 };

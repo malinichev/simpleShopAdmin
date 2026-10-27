@@ -8,5 +8,6 @@
 
 export interface ReorderItemDto {
   id: string;
+  /** @minimum 0 */
   order: number;
 }

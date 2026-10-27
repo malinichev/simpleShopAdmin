@@ -27,6 +27,7 @@ import type {
 import type {
   DetectDuplicatesDto,
   ImportControllerGetJobsParams,
+  ImportJob,
   StartImportDto
 } from '../model';
 
@@ -225,7 +226,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getImportControllerDetectDuplicatesMutationOptions(options), queryClient);
     }
     export type importControllerStartResponse201 = {
-  data: void
+  data: ImportJob
   status: 201
 }
 
@@ -431,7 +432,7 @@ export function useImportControllerGetJobs<TData = Awaited<ReturnType<typeof imp
 
 
 export type importControllerGetJobResponse200 = {
-  data: void
+  data: ImportJob
   status: 200
 }
 

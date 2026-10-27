@@ -8,5 +8,6 @@
 
 export interface UpdateStockDto {
   variantId: string;
+  /** @minimum 0 */
   stock: number;
 }

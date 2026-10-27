@@ -10,5 +10,6 @@ export interface ProductImageDto {
   id: string;
   url: string;
   alt: string;
+  /** @minimum 0 */
   order: number;
 }

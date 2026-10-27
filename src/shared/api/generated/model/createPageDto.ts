@@ -8,13 +8,28 @@
 import type { CreatePageDtoContent } from './createPageDtoContent';
 
 export interface CreatePageDto {
-  /** URL-safe slug (lowercase letters, digits, hyphens) */
+  /**
+     * URL-safe slug (lowercase letters, digits, hyphens)
+     * @minLength 1
+     * @maxLength 100
+     * @pattern /^[a-z0-9-]+$/
+     */
   slug: string;
-  /** Display name in admin */
+  /**
+     * Display name in admin
+     * @minLength 1
+     * @maxLength 200
+     */
   title: string;
-  /** Meta title for SEO */
+  /**
+     * Meta title for SEO
+     * @maxLength 200
+     */
   metaTitle?: string;
-  /** Meta description for SEO */
+  /**
+     * Meta description for SEO
+     * @maxLength 500
+     */
   metaDescription?: string;
   /** Arbitrary JSON content */
   content?: CreatePageDtoContent;

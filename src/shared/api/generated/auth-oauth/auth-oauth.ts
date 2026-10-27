@@ -55,17 +55,24 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
+export type oAuthAuthControllerVkInitResponse200 = {
+  data: void
+  status: 200
+}
+
 export type oAuthAuthControllerVkInitResponse302 = {
   data: void
   status: 302
 }
 
-;
+export type oAuthAuthControllerVkInitResponseSuccess = (oAuthAuthControllerVkInitResponse200) & {
+  headers: Headers;
+};
 export type oAuthAuthControllerVkInitResponseError = (oAuthAuthControllerVkInitResponse302) & {
   headers: Headers;
 };
 
-export type oAuthAuthControllerVkInitResponse = (oAuthAuthControllerVkInitResponseError)
+export type oAuthAuthControllerVkInitResponse = (oAuthAuthControllerVkInitResponseSuccess | oAuthAuthControllerVkInitResponseError)
 
 export const getOAuthAuthControllerVkInitUrl = (params?: OAuthAuthControllerVkInitParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -175,17 +182,24 @@ export function useOAuthAuthControllerVkInit<TData = Awaited<ReturnType<typeof o
 
 
 
+export type oAuthAuthControllerVkCallbackResponse200 = {
+  data: void
+  status: 200
+}
+
 export type oAuthAuthControllerVkCallbackResponse302 = {
   data: void
   status: 302
 }
 
-;
+export type oAuthAuthControllerVkCallbackResponseSuccess = (oAuthAuthControllerVkCallbackResponse200) & {
+  headers: Headers;
+};
 export type oAuthAuthControllerVkCallbackResponseError = (oAuthAuthControllerVkCallbackResponse302) & {
   headers: Headers;
 };
 
-export type oAuthAuthControllerVkCallbackResponse = (oAuthAuthControllerVkCallbackResponseError)
+export type oAuthAuthControllerVkCallbackResponse = (oAuthAuthControllerVkCallbackResponseSuccess | oAuthAuthControllerVkCallbackResponseError)
 
 export const getOAuthAuthControllerVkCallbackUrl = (params?: OAuthAuthControllerVkCallbackParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -295,17 +309,24 @@ export function useOAuthAuthControllerVkCallback<TData = Awaited<ReturnType<type
 
 
 
+export type oAuthAuthControllerYandexInitResponse200 = {
+  data: void
+  status: 200
+}
+
 export type oAuthAuthControllerYandexInitResponse302 = {
   data: void
   status: 302
 }
 
-;
+export type oAuthAuthControllerYandexInitResponseSuccess = (oAuthAuthControllerYandexInitResponse200) & {
+  headers: Headers;
+};
 export type oAuthAuthControllerYandexInitResponseError = (oAuthAuthControllerYandexInitResponse302) & {
   headers: Headers;
 };
 
-export type oAuthAuthControllerYandexInitResponse = (oAuthAuthControllerYandexInitResponseError)
+export type oAuthAuthControllerYandexInitResponse = (oAuthAuthControllerYandexInitResponseSuccess | oAuthAuthControllerYandexInitResponseError)
 
 export const getOAuthAuthControllerYandexInitUrl = (params?: OAuthAuthControllerYandexInitParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -415,17 +436,24 @@ export function useOAuthAuthControllerYandexInit<TData = Awaited<ReturnType<type
 
 
 
+export type oAuthAuthControllerYandexCallbackResponse200 = {
+  data: void
+  status: 200
+}
+
 export type oAuthAuthControllerYandexCallbackResponse302 = {
   data: void
   status: 302
 }
 
-;
+export type oAuthAuthControllerYandexCallbackResponseSuccess = (oAuthAuthControllerYandexCallbackResponse200) & {
+  headers: Headers;
+};
 export type oAuthAuthControllerYandexCallbackResponseError = (oAuthAuthControllerYandexCallbackResponse302) & {
   headers: Headers;
 };
 
-export type oAuthAuthControllerYandexCallbackResponse = (oAuthAuthControllerYandexCallbackResponseError)
+export type oAuthAuthControllerYandexCallbackResponse = (oAuthAuthControllerYandexCallbackResponseSuccess | oAuthAuthControllerYandexCallbackResponseError)
 
 export const getOAuthAuthControllerYandexCallbackUrl = (params?: OAuthAuthControllerYandexCallbackParams,) => {
   const normalizedParams = new URLSearchParams();

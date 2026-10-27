@@ -9,6 +9,7 @@ import type { CartItemDto } from './cartItemDto';
 
 export interface ValidatePromoDto {
   code: string;
+  /** @minimum 0 */
   cartTotal: number;
   items: CartItemDto[];
 }
