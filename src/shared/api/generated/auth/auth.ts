@@ -37,7 +37,8 @@ import type {
   SetPasswordDto,
   TokensDto,
   UpdateAddressDto,
-  UpdateProfileDto
+  UpdateProfileDto,
+  UserResponseDto
 } from '../model';
 
 import { customInstance } from '../../custom-instance';
@@ -749,7 +750,7 @@ export const useAuthControllerVerifyEmail = <TError = void,
       return useMutation(getAuthControllerVerifyEmailMutationOptions(options), queryClient);
     }
     export type authControllerGetProfileResponse200 = {
-  data: void
+  data: UserResponseDto
   status: 200
 }
 

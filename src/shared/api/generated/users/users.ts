@@ -29,7 +29,9 @@ import type {
   UpdateUserDto,
   UserResponseDto,
   UserStatsDto,
+  UsersControllerFindAll200,
   UsersControllerFindAllParams,
+  UsersControllerGetUserOrders200,
   UsersControllerGetUserOrdersParams
 } from '../model';
 
@@ -168,7 +170,7 @@ export function useUsersControllerGetStats<TData = Awaited<ReturnType<typeof use
 
 
 export type usersControllerFindAllResponse200 = {
-  data: void
+  data: UsersControllerFindAll200
   status: 200
 }
 
@@ -716,7 +718,7 @@ export const useUsersControllerRemove = <TError = void,
       return useMutation(getUsersControllerRemoveMutationOptions(options), queryClient);
     }
     export type usersControllerGetUserOrdersResponse200 = {
-  data: void
+  data: UsersControllerGetUserOrders200
   status: 200
 }
 

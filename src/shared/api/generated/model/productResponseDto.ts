@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { CategoryBriefDto } from './categoryBriefDto';
+import type { ColorSiblingDto } from './colorSiblingDto';
 import type { ProductResponseDtoAttributes } from './productResponseDtoAttributes';
 import type { ProductResponseDtoGtin } from './productResponseDtoGtin';
 import type { ProductResponseDtoImagesItem } from './productResponseDtoImagesItem';
@@ -39,7 +40,9 @@ export interface ProductResponseDto {
   colorHex?: string;
   modelId?: ProductResponseDtoModelId;
   gtin?: ProductResponseDtoGtin;
-  colorSiblings?: string[];
+  colorSiblings?: ColorSiblingDto[];
+  /** Требует кода маркировки Честный ЗНАК при отгрузке */
+  requiresMarking: boolean;
   createdAt: string;
   updatedAt: string;
 }

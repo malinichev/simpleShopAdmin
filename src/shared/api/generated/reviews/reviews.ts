@@ -29,7 +29,9 @@ import type {
   CreateReviewDto,
   ReviewEligibilityDto,
   ReviewResponseDto,
+  ReviewsControllerFindAll200,
   ReviewsControllerFindAllParams,
+  ReviewsControllerFindByProduct200,
   ReviewsControllerFindByProductParams,
   UpdateReviewDto
 } from '../model';
@@ -169,7 +171,7 @@ export function useReviewsControllerCheckReviewEligibility<TData = Awaited<Retur
 
 
 export type reviewsControllerFindByProductResponse200 = {
-  data: void
+  data: ReviewsControllerFindByProduct200
   status: 200
 }
 
@@ -408,7 +410,7 @@ export const useReviewsControllerCreate = <TError = void,
       return useMutation(getReviewsControllerCreateMutationOptions(options), queryClient);
     }
     export type reviewsControllerFindAllResponse200 = {
-  data: void
+  data: ReviewsControllerFindAll200
   status: 200
 }
 
