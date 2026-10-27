@@ -27,6 +27,7 @@ import type {
 import type {
   CreatePaymentMethodDto,
   CreateShippingMethodDto,
+  PublicSettingsDto,
   UpdatePaymentMethodDto,
   UpdateSettingsDto,
   UpdateShippingMethodDto
@@ -55,7 +56,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export type settingsControllerGetPublicSettingsResponse200 = {
-  data: void
+  data: PublicSettingsDto
   status: 200
 }
 

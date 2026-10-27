@@ -27,9 +27,11 @@ import type {
 import type {
   BulkDeleteDto,
   BulkUpdateStatusDto,
+  ColorSiblingDto,
   CreateProductDto,
   ProductFacetsDto,
   ProductResponseDto,
+  ProductsControllerFindAll200,
   ProductsControllerFindAllParams,
   ProductsControllerFindRelatedParams,
   ProductsControllerGetFacetsParams,
@@ -61,7 +63,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export type productsControllerFindAllResponse200 = {
-  data: void
+  data: ProductsControllerFindAll200
   status: 200
 }
 
@@ -977,7 +979,7 @@ export const useProductsControllerDelete = <TError = void,
       return useMutation(getProductsControllerDeleteMutationOptions(options), queryClient);
     }
     export type productsControllerFindColorSiblingsResponse200 = {
-  data: void
+  data: ColorSiblingDto[]
   status: 200
 }
 

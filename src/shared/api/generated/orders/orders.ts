@@ -27,6 +27,7 @@ import type {
 import type {
   CreateOrderDto,
   OrderResponseDto,
+  OrdersControllerFindAll200,
   OrdersControllerFindAllParams,
   OrdersControllerGetStatsParams,
   UpdateOrderDto,
@@ -56,7 +57,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export type ordersControllerFindAllResponse200 = {
-  data: void
+  data: OrdersControllerFindAll200
   status: 200
 }
 
