@@ -11,11 +11,16 @@
     "preview": "vite preview",
     "deploy:production": "./node_modules/.bin/pm2 deploy production",
     "deploy:setup": "./node_modules/.bin/pm2 deploy production setup",
-    "prepare": "husky 2>/dev/null || true"
+    "prepare": "husky 2>/dev/null || true",
+    "gen:api": "orval --config orval.config.ts"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": ["eslint --fix"],
-    "*.{json,md,yml,yaml,scss,css}": ["prettier --write"]
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml,scss,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -74,6 +79,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "orval": "^8.45.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1"

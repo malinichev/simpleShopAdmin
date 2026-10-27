@@ -1,35 +1,18 @@
-export type UserRole = 'customer' | 'manager' | 'admin';
+/**
+ * Единый источник типов — модели, сгенерированные из OpenAPI-контракта бекенда
+ * (orval, `pnpm gen:api`). Легаси-имена (User, AuthTokens, ...) сохранены как
+ * алиасы, чтобы существующий код не ломался. Новый код импортирует типы и хуки
+ * напрямую из `./generated`.
+ */
+export type {
+  UserResponseDto as User,
+  UserResponseDtoRole as UserRole,
+  TokensDto as AuthTokens,
+  LoginDto as LoginRequest,
+  AuthResponseDto as LoginResponse,
+} from './generated/model';
 
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: UserRole;
-  avatar?: string;
-  addresses: object[];
-  isEmailVerified: boolean;
-  wishlist: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-  client?: 'admin-panel';
-}
-
+// У бекенда для verify-email нет типизированного DTO в контракте — остаётся локально
 export interface VerifyEmailRequest {
   token: string;
-}
-
-export interface LoginResponse extends AuthTokens {
-  user: User;
 }
