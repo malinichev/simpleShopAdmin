@@ -11,7 +11,9 @@ import type { CartTotalsDto } from './cartTotalsDto';
 export interface CartResponseDto {
   id: string;
   items: CartItemResponseDto[];
-  promoCode?: string;
-  promoDiscount?: number;
+  /** @nullable */
+  promoCode?: string | null;
+  /** @nullable */
+  promoDiscount?: number | null;
   totals: CartTotalsDto;
 }
