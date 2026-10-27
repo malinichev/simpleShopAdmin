@@ -14,6 +14,7 @@ export interface CreateCategoryDto {
   description?: string;
   image?: string;
   parentId?: string;
+  /** @minimum 0 */
   order?: number;
   isActive?: boolean;
   seo?: SeoDto;

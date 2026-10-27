@@ -862,6 +862,11 @@ export const useOrdersControllerUpdateStatus = <TError = void,
   status: 200
 }
 
+export type ordersControllerCancelResponse201 = {
+  data: OrderResponseDto
+  status: 201
+}
+
 export type ordersControllerCancelResponse400 = {
   data: void
   status: 400
@@ -877,7 +882,7 @@ export type ordersControllerCancelResponse404 = {
   status: 404
 }
 
-export type ordersControllerCancelResponseSuccess = (ordersControllerCancelResponse200) & {
+export type ordersControllerCancelResponseSuccess = (ordersControllerCancelResponse200 | ordersControllerCancelResponse201) & {
   headers: Headers;
 };
 export type ordersControllerCancelResponseError = (ordersControllerCancelResponse400 | ordersControllerCancelResponse403 | ordersControllerCancelResponse404) & {

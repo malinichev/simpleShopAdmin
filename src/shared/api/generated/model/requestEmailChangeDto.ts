@@ -8,5 +8,6 @@
 
 export interface RequestEmailChangeDto {
   newEmail: string;
+  /** @minLength 1 */
   currentPassword: string;
 }

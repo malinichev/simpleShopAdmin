@@ -8,6 +8,7 @@
 import type { BulkUpdateStatusDtoStatus } from './bulkUpdateStatusDtoStatus';
 
 export interface BulkUpdateStatusDto {
+  /** @minItems 1 */
   ids: string[];
   status: BulkUpdateStatusDtoStatus;
 }

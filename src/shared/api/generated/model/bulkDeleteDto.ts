@@ -7,5 +7,6 @@
  */
 
 export interface BulkDeleteDto {
+  /** @minItems 1 */
   ids: string[];
 }

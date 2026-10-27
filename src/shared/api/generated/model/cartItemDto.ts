@@ -9,6 +9,8 @@
 export interface CartItemDto {
   productId: string;
   categoryId?: string;
+  /** @minimum 1 */
   quantity: number;
+  /** @minimum 0 */
   price: number;
 }

@@ -19,7 +19,9 @@ export interface UpdateProductDto {
   shortDescription?: string;
   /** Auto-generated if not provided */
   sku?: string;
+  /** @minimum 0 */
   price?: number;
+  /** @minimum 0 */
   compareAtPrice?: number;
   categoryId?: string;
   tags?: string[];
@@ -30,8 +32,10 @@ export interface UpdateProductDto {
   seo?: ProductSeoDto;
   isVisible?: boolean;
   color?: string;
+  /** @pattern ^#?([0-9A-F]{3}|[0-9A-F]{4}|[0-9A-F]{6}|[0-9A-F]{8})$ */
   colorHex?: string;
   modelId?: string;
+  /** @pattern /^\d{8,14}$/ */
   gtin?: string;
   /** Товар подлежит обязательной маркировке (Честный знак) */
   requiresMarking?: boolean;

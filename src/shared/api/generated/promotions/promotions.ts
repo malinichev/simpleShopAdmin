@@ -27,6 +27,7 @@ import type {
 import type {
   CreatePromotionDto,
   PromotionResponseDto,
+  PromotionsControllerValidate201,
   UpdatePromotionDto,
   ValidatePromoDto,
   ValidatePromoResponseDto
@@ -595,7 +596,12 @@ export const usePromotionsControllerDelete = <TError = void,
   status: 200
 }
 
-export type promotionsControllerValidateResponseSuccess = (promotionsControllerValidateResponse200) & {
+export type promotionsControllerValidateResponse201 = {
+  data: PromotionsControllerValidate201
+  status: 201
+}
+
+export type promotionsControllerValidateResponseSuccess = (promotionsControllerValidateResponse200 | promotionsControllerValidateResponse201) & {
   headers: Headers;
 };
 ;

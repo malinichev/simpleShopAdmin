@@ -11,6 +11,7 @@ export interface RegisterDto {
   /**
      * @minLength 8
      * @maxLength 50
+     * @pattern /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/
      */
   password: string;
   /**
@@ -23,5 +24,6 @@ export interface RegisterDto {
      * @maxLength 50
      */
   lastName: string;
+  /** @pattern /^\+?[1-9]\d{6,14}$/ */
   phone?: string;
 }

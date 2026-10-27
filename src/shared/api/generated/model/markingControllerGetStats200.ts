@@ -6,7 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-/**
- * @nullable
- */
-export type OAuthIdentityDtoEmail = { [key: string]: unknown } | null;
+export type MarkingControllerGetStats200 = { [key: string]: unknown };

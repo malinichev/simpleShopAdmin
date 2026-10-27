@@ -6,4 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export type UserStatsDtoByRole = { [key: string]: unknown };
+export type UserStatsDtoByRole = {
+  customer: number;
+  manager: number;
+  admin: number;
+};

@@ -16,5 +16,5 @@ export interface CreateAddressDto {
   building: string;
   apartment?: string;
   postalCode: string;
-  isDefault: boolean;
+  isDefault?: boolean;
 }

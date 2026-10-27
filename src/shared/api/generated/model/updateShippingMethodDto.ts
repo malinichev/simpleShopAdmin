@@ -8,8 +8,10 @@
 
 export interface UpdateShippingMethodDto {
   name?: string;
+  /** @minimum 0 */
   price?: number;
   description?: string;
   isActive?: boolean;
+  /** @minimum 0 */
   order?: number;
 }

@@ -25,7 +25,10 @@ export interface CreateReviewDto {
      * @maxLength 1000
      */
   text: string;
-  /** Image URLs (max 5) */
+  /**
+     * Image URLs (max 5)
+     * @maxItems 5
+     */
   images?: string[];
   /** Hide author name */
   isAnonymous?: boolean;

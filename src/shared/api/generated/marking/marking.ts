@@ -28,7 +28,9 @@ import type {
   BulkCreateMarkingCodesDto,
   BulkUpdateMarkingStatusDto,
   CreateMarkingCodeDto,
+  MarkingCode,
   MarkingControllerFindAllParams,
+  MarkingControllerGetStats200,
   MarkingControllerGetStatsParams,
   UpdateMarkingStatusDto
 } from '../model';
@@ -169,7 +171,7 @@ export function useMarkingControllerFindAll<TData = Awaited<ReturnType<typeof ma
 
 
 export type markingControllerCreateResponse201 = {
-  data: void
+  data: MarkingCode
   status: 201
 }
 
@@ -262,7 +264,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getMarkingControllerCreateMutationOptions(options), queryClient);
     }
     export type markingControllerGetStatsResponse200 = {
-  data: void
+  data: MarkingControllerGetStats200
   status: 200
 }
 
@@ -468,7 +470,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getMarkingControllerBulkCreateMutationOptions(options), queryClient);
     }
     export type markingControllerUpdateStatusResponse200 = {
-  data: void
+  data: MarkingCode
   status: 200
 }
 
@@ -562,7 +564,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getMarkingControllerUpdateStatusMutationOptions(options), queryClient);
     }
     export type markingControllerBulkUpdateStatusResponse201 = {
-  data: void
+  data: number
   status: 201
 }
 

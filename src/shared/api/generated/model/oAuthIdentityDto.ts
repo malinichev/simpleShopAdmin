@@ -5,13 +5,12 @@
  * Backend API для интернет-магазина женской спортивной одежды
  * OpenAPI spec version: 1.0
  */
-import type { OAuthIdentityDtoEmail } from './oAuthIdentityDtoEmail';
 import type { OAuthIdentityDtoProvider } from './oAuthIdentityDtoProvider';
 
 export interface OAuthIdentityDto {
   id: string;
   provider: OAuthIdentityDtoProvider;
   /** @nullable */
-  email: OAuthIdentityDtoEmail;
+  email: string | null;
   linkedAt: string;
 }

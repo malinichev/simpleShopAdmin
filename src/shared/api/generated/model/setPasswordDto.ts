@@ -7,6 +7,10 @@
  */
 
 export interface SetPasswordDto {
-  /** @minLength 8 */
+  /**
+     * @minLength 8
+     * @maxLength 50
+     * @pattern /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/
+     */
   newPassword: string;
 }

@@ -12,6 +12,7 @@ export interface CreatePaymentMethodDto {
   name: string;
   description?: string;
   isActive?: boolean;
+  /** @minimum 0 */
   order?: number;
   /** Провайдер: manual (default — оплата вне системы) | yookassa | stripe | cloudpayments */
   provider?: CreatePaymentMethodDtoProvider;

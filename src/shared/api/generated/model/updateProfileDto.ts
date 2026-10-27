@@ -7,7 +7,9 @@
  */
 
 export interface UpdateProfileDto {
+  /** @minLength 1 */
   firstName?: string;
+  /** @minLength 1 */
   lastName?: string;
   phone?: string;
   avatar?: string;
