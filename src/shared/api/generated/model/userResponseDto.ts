@@ -5,7 +5,7 @@
  * Backend API для интернет-магазина женской спортивной одежды
  * OpenAPI spec version: 1.0
  */
-import type { UserResponseDtoAddressesItem } from './userResponseDtoAddressesItem';
+import type { UserAddressDto } from './userAddressDto';
 import type { UserResponseDtoRole } from './userResponseDtoRole';
 
 export interface UserResponseDto {
@@ -16,7 +16,7 @@ export interface UserResponseDto {
   phone?: string;
   role: UserResponseDtoRole;
   avatar?: string;
-  addresses: UserResponseDtoAddressesItem[];
+  addresses: UserAddressDto[];
   isEmailVerified: boolean;
   /** True если у пользователя задан пароль (не OAuth-only юзер) */
   hasPassword: boolean;

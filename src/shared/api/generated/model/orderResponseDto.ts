@@ -5,11 +5,11 @@
  * Backend API для интернет-магазина женской спортивной одежды
  * OpenAPI spec version: 1.0
  */
-import type { OrderResponseDtoHistoryItem } from './orderResponseDtoHistoryItem';
-import type { OrderResponseDtoItemsItem } from './orderResponseDtoItemsItem';
+import type { OrderHistoryItemDto } from './orderHistoryItemDto';
+import type { OrderItemDto } from './orderItemDto';
 import type { OrderResponseDtoPaymentStatus } from './orderResponseDtoPaymentStatus';
-import type { OrderResponseDtoShippingAddress } from './orderResponseDtoShippingAddress';
 import type { OrderResponseDtoStatus } from './orderResponseDtoStatus';
+import type { OrderShippingAddressDto } from './orderShippingAddressDto';
 import type { OrderUserBriefDto } from './orderUserBriefDto';
 
 export interface OrderResponseDto {
@@ -17,13 +17,13 @@ export interface OrderResponseDto {
   orderNumber: string;
   userId: string;
   user?: OrderUserBriefDto;
-  items: OrderResponseDtoItemsItem[];
+  items: OrderItemDto[];
   subtotal: number;
   discount: number;
   shipping: number;
   total: number;
   status: OrderResponseDtoStatus;
-  shippingAddress: OrderResponseDtoShippingAddress;
+  shippingAddress: OrderShippingAddressDto;
   shippingMethod: string;
   paymentMethod: string;
   paymentStatus: OrderResponseDtoPaymentStatus;
@@ -33,7 +33,7 @@ export interface OrderResponseDto {
   promoDiscount?: number;
   customerNote?: string;
   adminNote?: string;
-  history: OrderResponseDtoHistoryItem[];
+  history: OrderHistoryItemDto[];
   createdAt: string;
   updatedAt: string;
 }

@@ -6,4 +6,15 @@
  * OpenAPI spec version: 1.0
  */
 
-export type OrderResponseDtoShippingAddress = { [key: string]: unknown };
+export interface OrderItemDto {
+  productId: string;
+  variantId: string;
+  name: string;
+  sku: string;
+  image?: string;
+  size: string;
+  color: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
