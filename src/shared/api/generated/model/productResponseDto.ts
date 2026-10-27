@@ -7,12 +7,10 @@
  */
 import type { CategoryBriefDto } from './categoryBriefDto';
 import type { ColorSiblingDto } from './colorSiblingDto';
+import type { ProductAttributesDto } from './productAttributesDto';
 import type { ProductImageDto } from './productImageDto';
-import type { ProductResponseDtoAttributes } from './productResponseDtoAttributes';
-import type { ProductResponseDtoGtin } from './productResponseDtoGtin';
-import type { ProductResponseDtoModelId } from './productResponseDtoModelId';
-import type { ProductResponseDtoSeo } from './productResponseDtoSeo';
 import type { ProductResponseDtoStatus } from './productResponseDtoStatus';
+import type { ProductSeoDto } from './productSeoDto';
 import type { ProductVariantDto } from './productVariantDto';
 
 export interface ProductResponseDto {
@@ -29,17 +27,19 @@ export interface ProductResponseDto {
   tags: string[];
   images: ProductImageDto[];
   variants: ProductVariantDto[];
-  attributes: ProductResponseDtoAttributes;
+  attributes: ProductAttributesDto;
   rating: number;
   reviewsCount: number;
   soldCount: number;
   status: ProductResponseDtoStatus;
-  seo: ProductResponseDtoSeo;
+  seo: ProductSeoDto;
   isVisible: boolean;
   color?: string;
   colorHex?: string;
-  modelId?: ProductResponseDtoModelId;
-  gtin?: ProductResponseDtoGtin;
+  /** @nullable */
+  modelId?: string | null;
+  /** @nullable */
+  gtin?: string | null;
   colorSiblings?: ColorSiblingDto[];
   /** Требует кода маркировки Честный ЗНАК при отгрузке */
   requiresMarking: boolean;
