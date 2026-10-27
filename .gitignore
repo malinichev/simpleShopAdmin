@@ -27,3 +27,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated API layer (коммитим: код потребляется сборкой без запуска codegen)
+# src/shared/api/generated/ — намеренно в git
