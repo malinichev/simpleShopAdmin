@@ -4,7 +4,7 @@
 module.exports = {
   deploy: {
     production: {
-      user: 'deploy',
+      user: 'root',
       host: '186.246.48.216',
       ref: 'origin/main',
       repo: 'git@github-admin:malinichev/simpleShopAdmin.git',
