@@ -10,4 +10,5 @@ export type UserStatsDtoByRole = {
   customer: number;
   manager: number;
   admin: number;
+  super_admin: number;
 };

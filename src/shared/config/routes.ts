@@ -12,6 +12,7 @@ export const ROUTES = {
   PROMOTIONS: '/promotions',
   ANALYTICS: '/analytics',
   SETTINGS: '/settings',
+  BACKUPS: '/backups',
   VERIFY_EMAIL: '/verify-email',
   MARKING: '/marking',
   IMPORT_PRODUCTS: '/products/import',

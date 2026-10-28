@@ -13,4 +13,5 @@ export const UpdateUserDtoRole = {
   customer: 'customer',
   manager: 'manager',
   admin: 'admin',
+  super_admin: 'super_admin',
 } as const;

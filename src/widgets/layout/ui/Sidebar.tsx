@@ -11,6 +11,7 @@ import {
   Settings,
   FileText,
   QrCode,
+  DatabaseBackup,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -19,7 +20,15 @@ import { cn } from '@/shared/lib/utils';
 import { ROUTES, brand, getBrandInitials } from '@/shared/config';
 import { useAuth } from '@/features/auth';
 
-const navItems = [
+interface NavItem {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  /** Пункт виден только главным администраторам */
+  superAdminOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
   { path: ROUTES.HOME, label: 'Дашборд', icon: LayoutDashboard },
   { path: ROUTES.PRODUCTS, label: 'Товары', icon: Package },
   { path: ROUTES.CATEGORIES, label: 'Категории', icon: FolderTree },
@@ -31,7 +40,8 @@ const navItems = [
   { path: ROUTES.ANALYTICS, label: 'Аналитика', icon: BarChart3 },
   { path: ROUTES.PAGES, label: 'Страницы', icon: FileText },
   { path: ROUTES.SETTINGS, label: 'Настройки', icon: Settings },
-] as const;
+  { path: ROUTES.BACKUPS, label: 'Резервные копии', icon: DatabaseBackup, superAdminOnly: true },
+];
 
 interface SidebarProps {
   collapsed: boolean;
@@ -40,6 +50,10 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { user, logout } = useAuth();
+
+  const visibleItems = navItems.filter(
+    (item) => !item.superAdminOnly || user?.role === 'super_admin',
+  );
 
   return (
     <aside
@@ -65,7 +79,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
-          {navItems.map(({ path, label, icon: Icon }) => (
+          {visibleItems.map(({ path, label, icon: Icon }) => (
             <li key={path}>
               <NavLink
                 to={path}

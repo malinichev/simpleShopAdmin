@@ -1,6 +1,7 @@
 export * from './analytics/analytics';
 export * from './auth/auth';
 export * from './auth-oauth/auth-oauth';
+export * from './backups/backups';
 export * from './cart/cart';
 export * from './categories/categories';
 export * from './health/health';

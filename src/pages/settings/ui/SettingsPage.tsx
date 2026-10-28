@@ -18,6 +18,7 @@ import { Skeleton } from '@/shared/ui/skeleton';
 import { api } from '@/shared/api';
 import { formatDate } from '@/shared/lib/utils/date';
 import { useCustomers } from '@/features/customer-management';
+import { useAuth } from '@/features/auth';
 import {
   useSettings,
   useUpdateSettings,
@@ -823,7 +824,7 @@ const adminFormSchema = z.object({
   firstName: z.string().min(1, 'Имя обязательно'),
   lastName: z.string().min(1, 'Фамилия обязательна'),
   email: z.string().email('Некорректный email'),
-  role: z.enum(['admin', 'manager']),
+  role: z.enum(['super_admin', 'admin', 'manager']),
   password: z.string().min(8, 'Минимум 8 символов'),
 });
 
@@ -834,29 +835,47 @@ const roleOptions = [
   { value: 'manager', label: 'Менеджер' },
 ];
 
+/** Опция главного администратора доступна только главному администратору */
+const superAdminRoleOption = { value: 'super_admin', label: 'Главный администратор' };
+
 const roleBadgeVariant: Record<string, 'default' | 'secondary'> = {
+  super_admin: 'default',
   admin: 'default',
   manager: 'secondary',
 };
 
 const roleLabels: Record<string, string> = {
+  super_admin: 'Главный администратор',
   admin: 'Администратор',
   manager: 'Менеджер',
 };
 
 function AdminsTab() {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'super_admin';
+
   const { data, isLoading, refetch } = useCustomers({ page: 1, limit: 100, role: 'admin' });
   const { data: managersData, refetch: refetchManagers } = useCustomers({
     page: 1,
     limit: 100,
     role: 'manager',
   });
+  const { data: superAdminsData, refetch: refetchSuperAdmins } = useCustomers({
+    page: 1,
+    limit: 100,
+    role: 'super_admin',
+  });
 
   const admins = useMemo(() => {
+    const superAdminList = superAdminsData?.data ?? [];
     const adminList = data?.data ?? [];
     const managerList = managersData?.data ?? [];
-    return [...adminList, ...managerList];
-  }, [data, managersData]);
+    return [...superAdminList, ...adminList, ...managerList];
+  }, [superAdminsData, data, managersData]);
+
+  const availableRoleOptions = isSuperAdmin
+    ? [superAdminRoleOption, ...roleOptions]
+    : roleOptions;
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -899,17 +918,22 @@ function AdminsTab() {
           role: formData.role,
         });
 
-        toast.success('Администратор добавлен');
+        toast.success(
+          formData.role === 'super_admin'
+            ? 'Главный администратор добавлен'
+            : 'Администратор добавлен',
+        );
         setFormOpen(false);
         refetch();
         refetchManagers();
+        refetchSuperAdmins();
       } catch {
         toast.error('Ошибка при создании администратора');
       } finally {
         setIsSubmitting(false);
       }
     },
-    [refetch, refetchManagers],
+    [refetch, refetchManagers, refetchSuperAdmins],
   );
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -921,12 +945,13 @@ function AdminsTab() {
       setDeleteId(null);
       refetch();
       refetchManagers();
+      refetchSuperAdmins();
     } catch {
       toast.error('Ошибка при удалении');
     } finally {
       setIsDeleting(false);
     }
-  }, [deleteId, refetch, refetchManagers]);
+  }, [deleteId, refetch, refetchManagers, refetchSuperAdmins]);
 
   return (
     <>
@@ -987,13 +1012,20 @@ function AdminsTab() {
                       </td>
                       <td className="py-3">
                         <div className="flex items-center justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setDeleteId(admin.id)}
-                            className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {(admin.role !== 'super_admin' || isSuperAdmin) && (
+                            <button
+                              type="button"
+                              onClick={() => setDeleteId(admin.id)}
+                              className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                              title={
+                                admin.role === 'super_admin'
+                                  ? 'Удалить главного администратора'
+                                  : 'Удалить'
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1026,7 +1058,7 @@ function AdminsTab() {
             render={({ field }) => (
               <Select
                 label="Роль"
-                options={roleOptions}
+                options={availableRoleOptions}
                 value={field.value}
                 onChange={field.onChange}
               />

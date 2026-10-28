@@ -12,7 +12,7 @@ export interface CustomerAddress {
   isDefault: boolean;
 }
 
-export type UserRole = 'customer' | 'manager' | 'admin';
+export type UserRole = 'customer' | 'manager' | 'admin' | 'super_admin';
 
 export interface Customer {
   id: string;

@@ -56,6 +56,9 @@ const PageEditPage = lazy(() =>
 const MarkingPage = lazy(() =>
   import('@/pages/marking').then((m) => ({ default: m.MarkingPage })),
 );
+const BackupsPage = lazy(() =>
+  import('@/pages/backups').then((m) => ({ default: m.BackupsPage })),
+);
 const ImportProductsPage = lazy(() =>
   import('@/pages/import-products').then((m) => ({ default: m.ImportProductsPage })),
 );
@@ -90,6 +93,7 @@ export function AppRoutes() {
             <Route path={ROUTES.IMPORT_PRODUCTS} element={<ImportProductsPage />} />
             <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+            <Route path={ROUTES.BACKUPS} element={<BackupsPage />} />
             <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
             <Route path={ROUTES.PAGES} element={<PagesPage />} />
             <Route path={ROUTES.PAGE_EDIT} element={<PageEditPage />} />
