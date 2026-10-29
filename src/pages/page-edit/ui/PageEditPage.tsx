@@ -29,8 +29,21 @@ import {
   useDeletePageFile,
 } from '@/features/page-management';
 import { ROUTES } from '@/shared/config';
+import '@/shared/lib/monaco';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+// Шаблон для страниц с пустым контентом: сразу видна ожидаемая структура секций
+const EMPTY_CONTENT_TEMPLATE = JSON.stringify(
+  {
+    sections: [
+      { type: 'title', content: 'Заголовок страницы' },
+      { type: 'text', content: 'Абзац текста.' },
+    ],
+  },
+  null,
+  2,
+);
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -68,7 +81,13 @@ export function PageEditPage() {
     setMetaTitle(page.metaTitle ?? '');
     setMetaDescription(page.metaDescription ?? '');
     setIsPublished(page.isPublished);
-    setMonacoValue(JSON.stringify(page.content, null, 2));
+    const hasContent =
+      page.content && Object.keys(page.content as object).length > 0;
+    setMonacoValue(
+      hasContent
+        ? JSON.stringify(page.content, null, 2)
+        : EMPTY_CONTENT_TEMPLATE,
+    );
     setInitialized(true);
   }
 
@@ -261,6 +280,13 @@ export function PageEditPage() {
                   }}
                 />
               </div>
+              <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                Секции витрины:{' '}
+                <code>title</code> · <code>subtitle</code> · <code>text</code> ·{' '}
+                <code>html</code> (content — HTML-строка) · <code>image</code>{' '}
+                (url + alt в content). Готовые JSON для страниц магазина —{' '}
+                <code>docs/cms-pages/</code> в репозитории.
+              </p>
             </CardContent>
           </Card>
         </div>
