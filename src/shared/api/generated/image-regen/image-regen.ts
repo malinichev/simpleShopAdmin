@@ -32,6 +32,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AnalyzeImagesDto,
   ImageRegenControllerGetJobsParams,
   StartImageRegenDto
 } from '../model';
@@ -170,7 +171,106 @@ export function useImageRegenControllerGetConfig<TData = Awaited<ReturnType<type
 
 
 
-export type imageRegenControllerStartResponse201 = {
+export type imageRegenControllerAnalyzeResponse201 = {
+  data: void
+  status: 201
+}
+
+export type imageRegenControllerAnalyzeResponseSuccess = (imageRegenControllerAnalyzeResponse201) & {
+  headers: Headers;
+};
+;
+
+export type imageRegenControllerAnalyzeResponse = (imageRegenControllerAnalyzeResponseSuccess)
+
+export const getImageRegenControllerAnalyzeUrl = () => {
+
+
+
+
+  return `/image-regen/analyze`
+}
+
+/**
+ * @summary Vision-анализ выбранных фото: что за вещь + подходящие сцены под концепцию магазина
+ */
+export const imageRegenControllerAnalyze = async (analyzeImagesDto: AnalyzeImagesDto, options?: Parameters<typeof customInstance>[1]): Promise<imageRegenControllerAnalyzeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<imageRegenControllerAnalyzeResponse>(getImageRegenControllerAnalyzeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(analyzeImagesDto)
+  }
+);}
+
+
+
+
+
+export const getImageRegenControllerAnalyzeMutationKey = () => ['imageRegenControllerAnalyze'] as const;
+
+export const getImageRegenControllerAnalyzeMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof imageRegenControllerAnalyze>>, TError,ImageRegenControllerAnalyzeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof imageRegenControllerAnalyze>>, TError,ImageRegenControllerAnalyzeMutationVariables, TContext> => {
+
+const mutationKey = getImageRegenControllerAnalyzeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof imageRegenControllerAnalyze>>, ImageRegenControllerAnalyzeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  imageRegenControllerAnalyze(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImageRegenControllerAnalyzeMutationResult = NonNullable<Awaited<ReturnType<typeof imageRegenControllerAnalyze>>>
+    export type ImageRegenControllerAnalyzeMutationBody = AnalyzeImagesDto
+    export type ImageRegenControllerAnalyzeMutationError = unknown
+    export type ImageRegenControllerAnalyzeMutationVariables = {data: AnalyzeImagesDto}
+
+    /**
+ * @summary Vision-анализ выбранных фото: что за вещь + подходящие сцены под концепцию магазина
+ */
+export const useImageRegenControllerAnalyze = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof imageRegenControllerAnalyze>>, TError,ImageRegenControllerAnalyzeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof imageRegenControllerAnalyze>>,
+        TError,
+        ImageRegenControllerAnalyzeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getImageRegenControllerAnalyzeMutationOptions(options), queryClient);
+    }
+    export type imageRegenControllerStartResponse201 = {
   data: void
   status: 201
 }

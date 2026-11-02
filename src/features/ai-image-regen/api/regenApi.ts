@@ -44,9 +44,30 @@ export interface RegenConfig {
   presets: RegenPromptPreset[];
 }
 
+/** Vision-анализ выбранных фото перед генерацией. */
+export interface GarmentAnalysis {
+  garmentType: string;
+  color: string;
+  styleMood: string;
+  modelNote: string;
+  notes: string;
+  scenes: RegenPromptPreset[];
+}
+
 export const regenApi = {
   getConfig: async (): Promise<RegenConfig> => {
     const { data } = await api.get<RegenConfig>('/image-regen/config');
+    return data;
+  },
+
+  analyze: async (params: {
+    productId: string;
+    imageIds: string[];
+  }): Promise<GarmentAnalysis> => {
+    const { data } = await api.post<GarmentAnalysis>(
+      '/image-regen/analyze',
+      params,
+    );
     return data;
   },
 

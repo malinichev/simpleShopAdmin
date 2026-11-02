@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Sparkles, CheckCircle, XCircle, Loader2, AlertTriangle, Wand2 } from 'lucide-react';
+import { Sparkles, CheckCircle, XCircle, Loader2, AlertTriangle, Wand2, ScanEye, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/lib/utils';
-import { regenApi, type RegenJob } from '../api/regenApi';
+import { regenApi, type RegenJob, type GarmentAnalysis } from '../api/regenApi';
 import { useRegenJob } from '../model/useRegenJob';
 import { useRegenConfig } from '../model/useRegenConfig';
 import { BeforeAfter } from './BeforeAfter';
@@ -44,6 +44,9 @@ export function AiRegenDialog({
   // Ревью: выбранный вариант на каждое фото + отметка «заменить»
   const [chosenVariant, setChosenVariant] = useState<Record<string, number>>({});
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
+  // Vision-анализ выбранных фото (авто при входе в шаг промпта)
+  const [analysis, setAnalysis] = useState<GarmentAnalysis | null>(null);
+  const [analysisKey, setAnalysisKey] = useState<string | null>(null);
 
   const { data: job } = useRegenJob(jobId);
 
@@ -63,6 +66,43 @@ export function AiRegenDialog({
     setAccepted(nextAccepted);
     setStep('review');
   }, [step, job]);
+
+  /** Ключ выбранных фото — анализ гоняется один раз на набор. */
+  const selectionKey = useMemo(
+    () => [...selectedIds].sort().join(','),
+    [selectedIds],
+  );
+
+  const analyzeMutation = useMutation({
+    mutationFn: () =>
+      regenApi.analyze({
+        productId,
+        imageIds: [...selectedIds].slice(0, 3),
+      }),
+    onSuccess: (result: GarmentAnalysis) => {
+      setAnalysis(result);
+      setAnalysisKey(selectionKey);
+      // Готовая сцена под эту вещь — подставляем, если админ ещё ничего не писал
+      if (!prompt.trim() && result.scenes[0]?.prompt) {
+        setPrompt(result.scenes[0].prompt);
+      }
+    },
+    onError: () => {
+      // Анализ вспомогательный: не блокируем — промпт можно написать руками
+      toast.warning('Не удалось проанализировать фото', {
+        description: 'Напишите сцену вручную или повторите анализ',
+      });
+    },
+  });
+
+  // Автозапуск анализа при входе в шаг промпта (один раз на набор фото)
+  useEffect(() => {
+    if (step !== 'prompt' || !config?.enabled) return;
+    if (analysisKey === selectionKey) return;
+    if (analyzeMutation.isPending) return;
+    analyzeMutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, selectionKey, config?.enabled]);
 
   const startMutation = useMutation({
     mutationFn: () =>
@@ -131,6 +171,8 @@ export function AiRegenDialog({
     setJobId(null);
     setChosenVariant({});
     setAccepted({});
+    setAnalysis(null);
+    setAnalysisKey(null);
     onClose();
   };
 
@@ -249,6 +291,83 @@ export function AiRegenDialog({
       {/* ===== Шаг 2: промпт ===== */}
       {step === 'prompt' && (
         <div className="space-y-4">
+          {/* Vision-анализ выбранных фото: что за вещь + сцены под концепцию */}
+          {analyzeMutation.isPending && (
+            <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700">
+              <ScanEye className="h-5 w-5 animate-pulse text-primary-500" />
+              Анализирую выбранные фото: вещь, цвет, подходящие сцены…
+            </div>
+          )}
+          {analysis && (
+            <div className="rounded-lg border border-primary-200 bg-primary-50/60 p-4 dark:border-primary-800 dark:bg-primary-900/20">
+              <div className="flex items-start justify-between gap-2">
+                <p className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                  <ScanEye className="h-4 w-4 shrink-0 text-primary-600" />
+                  {analysis.garmentType}
+                </p>
+                <button
+                  type="button"
+                  aria-label="Повторить анализ"
+                  title="Повторить анализ фото"
+                  onClick={() => {
+                    setAnalysisKey(null);
+                    analyzeMutation.mutate();
+                  }}
+                  className="rounded-md p-1 text-gray-400 hover:bg-white/70 hover:text-gray-600 dark:hover:bg-gray-800"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
+                {analysis.color && (
+                  <p>
+                    <span className="text-gray-400">Цвет/принт:</span> {analysis.color}
+                  </p>
+                )}
+                {analysis.styleMood && (
+                  <p>
+                    <span className="text-gray-400">Настроение:</span> {analysis.styleMood}
+                  </p>
+                )}
+                {analysis.modelNote && (
+                  <p>
+                    <span className="text-gray-400">Модель:</span> {analysis.modelNote}
+                  </p>
+                )}
+                {analysis.notes && (
+                  <p className="sm:col-span-2">
+                    <span className="text-gray-400">Детали для генерации:</span> {analysis.notes}
+                  </p>
+                )}
+              </div>
+              {analysis.scenes.length > 0 && (
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-primary-700 dark:text-primary-300">
+                    Подобрано по фото и концепции магазина
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.scenes.map((scene) => (
+                      <button
+                        key={scene.title + scene.prompt.slice(0, 24)}
+                        type="button"
+                        onClick={() => setPrompt(scene.prompt)}
+                        className="rounded-full border border-primary-300 bg-white px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-700 dark:bg-gray-800 dark:text-primary-300 dark:hover:bg-gray-700"
+                      >
+                        <Sparkles className="mr-1 inline h-3 w-3" />
+                        {scene.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {step === 'prompt' && !analyzeMutation.isPending && !analysis && (
+            <p className="text-xs text-gray-400">
+              Автоанализ фото недоступен — напишите сцену вручную или нажмите «Сгенерировать»
+            </p>
+          )}
+
           {config && config.presets.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">

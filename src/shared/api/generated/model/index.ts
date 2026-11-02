@@ -24,6 +24,7 @@ export * from './analyticsControllerGetTopCategoriesParams';
 export * from './analyticsControllerGetTopProductsParams';
 export * from './analyticsControllerGetVisitorsGranularity';
 export * from './analyticsControllerGetVisitorsParams';
+export * from './analyzeImagesDto';
 export * from './applyPromoDto';
 export * from './authorizeUrlResponseDto';
 export * from './authResponseDto';
