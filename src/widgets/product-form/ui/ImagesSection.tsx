@@ -99,6 +99,7 @@ export function ImagesSection() {
           <Button
             variant="outline"
             size="sm"
+            type="button"
             disabled={aiButtonDisabled}
             onClick={() => setAiDialogOpen(true)}
             title="Перегенерировать выбранные фото с помощью ИИ в стиле магазина"
