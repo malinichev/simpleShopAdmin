@@ -1,6 +1,9 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useFormContext } from 'react-hook-form';
+import { Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Button } from '@/shared/ui/button';
 import {
   ImageUploader,
   ImageGallery,
@@ -8,12 +11,19 @@ import {
   type UploadResult,
   type ImageItem,
 } from '@/features/image-upload';
+import { AiRegenDialog, useRegenConfig, type RegenReplacement } from '@/features/ai-image-regen';
 import type { ProductFormData } from '@/features/product-management';
 
 export function ImagesSection() {
+  const { id: productId } = useParams<{ id: string }>();
   const { watch, setValue } = useFormContext<ProductFormData>();
   const rawImages = watch('images');
   const images = useMemo(() => rawImages ?? [], [rawImages]);
+
+  const { data: regenConfig } = useRegenConfig();
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  // id фото, заменённых через ИИ в этой сессии (бейдж в галерее)
+  const [aiIds, setAiIds] = useState<Set<string>>(new Set());
 
   const galleryImages: ImageItem[] = images.map((img, i) => ({
     id: img.id,
@@ -62,10 +72,41 @@ export function ImagesSection() {
     [setValue],
   );
 
+  /** Замена выбранных фото результатами ИИ-генерации (в форме; сохранение — штатное). */
+  const handleApplyRegen = useCallback(
+    (replacements: RegenReplacement[]) => {
+      const byId = new Map(replacements.map((r) => [r.imageId, r.url]));
+      setValue(
+        'images',
+        images.map((img) =>
+          byId.has(img.id) ? { ...img, url: byId.get(img.id)! } : img,
+        ),
+        { shouldDirty: true },
+      );
+      setAiIds((prev) => new Set([...prev, ...byId.keys()]));
+    },
+    [images, setValue],
+  );
+
+  const aiButtonVisible = regenConfig?.enabled === true && !!productId;
+  const aiButtonDisabled = !!productId && images.length === 0;
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle>Изображения</CardTitle>
+        {aiButtonVisible && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={aiButtonDisabled}
+            onClick={() => setAiDialogOpen(true)}
+            title="Перегенерировать выбранные фото с помощью ИИ в стиле магазина"
+          >
+            <Sparkles className="h-4 w-4" />
+            ИИ-перегенерация
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <ImageUploader
@@ -73,7 +114,20 @@ export function ImagesSection() {
           isUploading={isUploading}
           progress={progress}
         />
-        <ImageGallery images={galleryImages} onChange={handleGalleryChange} />
+        <ImageGallery
+          images={galleryImages}
+          onChange={handleGalleryChange}
+          aiIds={aiIds}
+        />
+        {productId && (
+          <AiRegenDialog
+            open={aiDialogOpen}
+            onClose={() => setAiDialogOpen(false)}
+            productId={productId}
+            images={galleryImages}
+            onApply={handleApplyRegen}
+          />
+        )}
       </CardContent>
     </Card>
   );

@@ -16,6 +16,17 @@ export interface SocialLinks {
   vk?: string;
 }
 
+export interface AiPromptPreset {
+  id: string;
+  title: string;
+  prompt: string;
+}
+
+export interface AiImagePrompts {
+  basePrompt: string;
+  presets: AiPromptPreset[];
+}
+
 export interface StoreSettings {
   id: string;
   storeName: string;
@@ -28,6 +39,7 @@ export interface StoreSettings {
   socialLinks: SocialLinks | null;
   notifications: NotificationSettings | null;
   notificationEmail: string | null;
+  aiImagePrompts: AiImagePrompts | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, Save, Store, Truck, CreditCard, Bell, Users, Pencil } from 'lucide-react';
+import { Plus, Trash2, Save, Store, Truck, CreditCard, Bell, Users, Pencil, Sparkles } from 'lucide-react';
 import type { Resolver } from 'react-hook-form';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
@@ -1098,6 +1098,140 @@ function AdminsTab() {
 }
 
 // ============================================================
+// AI Photos Tab (ИИ-генерация фото)
+// ============================================================
+
+function AiPhotosTab() {
+  const { data: settings, isLoading } = useSettings();
+  const updateSettings = useUpdateSettings();
+
+  const [basePrompt, setBasePrompt] = useState('');
+  const [presets, setPresets] = useState<Array<{ id: string; title: string; prompt: string }>>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (settings && !loaded) {
+      setBasePrompt(settings.aiImagePrompts?.basePrompt ?? '');
+      setPresets(settings.aiImagePrompts?.presets ?? []);
+      setLoaded(true);
+    }
+  }, [settings, loaded]);
+
+  const isDirty =
+    !!settings &&
+    (basePrompt !== (settings.aiImagePrompts?.basePrompt ?? '') ||
+      JSON.stringify(presets) !== JSON.stringify(settings.aiImagePrompts?.presets ?? []));
+
+  const addPreset = () => {
+    setPresets((prev) => [
+      ...prev,
+      { id: `preset-${Date.now()}`, title: '', prompt: '' },
+    ]);
+  };
+
+  const updatePreset = (id: string, patch: Partial<{ title: string; prompt: string }>) => {
+    setPresets((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  };
+
+  const removePreset = (id: string) => {
+    setPresets((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleSave = () => {
+    const clean = presets.filter((p) => p.title.trim() && p.prompt.trim());
+    updateSettings.mutate({
+      aiImagePrompts: { basePrompt: basePrompt.trim(), presets: clean },
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>ИИ-генерация фото</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-lg" />
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>ИИ-генерация фото</CardTitle>
+      </CardHeader>
+      <CardContent className="max-w-2xl space-y-6">
+        <div>
+          <Textarea
+            label="Базовый промпт стиля магазина"
+            value={basePrompt}
+            onChange={(e) => setBasePrompt(e.target.value)}
+            rows={6}
+            placeholder="Professional e-commerce lifestyle photography…"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Автоматически подставляется перед вашим промптом сцены при генерации
+            фото. Ориентир — гайд docs/PRODUCT_PHOTO_STYLE.md.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Пресеты сцен (чипы в диалоге генерации)
+            </p>
+            <Button size="sm" variant="outline" onClick={addPreset}>
+              <Plus className="mr-1.5 h-4 w-4" />
+              Пресет
+            </Button>
+          </div>
+          {presets.map((preset) => (
+            <div
+              key={preset.id}
+              className="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+            >
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Название (напр. «Чай перед сном»)"
+                  value={preset.title}
+                  onChange={(e) => updatePreset(preset.id, { title: e.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => removePreset(preset.id)}
+                  className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                  title="Удалить пресет"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <Textarea
+                placeholder="Промпт сцены (англ. — модели понимают лучше)"
+                value={preset.prompt}
+                onChange={(e) => updatePreset(preset.id, { prompt: e.target.value })}
+                rows={2}
+              />
+            </div>
+          ))}
+          {presets.length === 0 && (
+            <p className="text-sm text-gray-400">Пресетов пока нет</p>
+          )}
+        </div>
+
+        <Button onClick={handleSave} disabled={!isDirty} loading={updateSettings.isPending}>
+          <Save className="mr-1.5 h-4 w-4" />
+          Сохранить
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================================
 // Settings Page
 // ============================================================
 
@@ -1106,6 +1240,7 @@ const tabItems = [
   { value: 'shipping', label: 'Доставка', icon: Truck },
   { value: 'payment', label: 'Оплата', icon: CreditCard },
   { value: 'email', label: 'Уведомления', icon: Bell },
+  { value: 'ai-photos', label: 'ИИ-фото', icon: Sparkles },
   { value: 'admins', label: 'Администраторы', icon: Users },
 ];
 
@@ -1143,6 +1278,10 @@ export function SettingsPage() {
 
         <TabsContent value="email">
           <EmailTab />
+        </TabsContent>
+
+        <TabsContent value="ai-photos">
+          <AiPhotosTab />
         </TabsContent>
 
         <TabsContent value="admins">

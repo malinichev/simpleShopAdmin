@@ -5,6 +5,7 @@ export * from './backups/backups';
 export * from './cart/cart';
 export * from './categories/categories';
 export * from './health/health';
+export * from './image-regen/image-regen';
 export * from './import/import';
 export * from './marking/marking';
 export * from './orders/orders';

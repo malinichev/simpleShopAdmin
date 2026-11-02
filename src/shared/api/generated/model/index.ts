@@ -15,6 +15,8 @@
 
 export * from './addToCartDto';
 export * from './adminReplyDto';
+export * from './aiImagePromptsDto';
+export * from './aiPromptPresetDto';
 export * from './analyticsControllerGetLowStockParams';
 export * from './analyticsControllerGetSalesGranularity';
 export * from './analyticsControllerGetSalesParams';
@@ -76,6 +78,7 @@ export * from './healthControllerCheck503';
 export * from './healthControllerCheck503Details';
 export * from './healthControllerCheck503Error';
 export * from './healthControllerCheck503Info';
+export * from './imageRegenControllerGetJobsParams';
 export * from './importControllerGetJobsParams';
 export * from './importJob';
 export * from './loginDto';
@@ -157,6 +160,8 @@ export * from './seoResponseDto';
 export * from './setPasswordDto';
 export * from './shippingAddressDto';
 export * from './socialLinksDto';
+export * from './startImageRegenDto';
+export * from './startImageRegenDtoVariantsPerImage';
 export * from './startImportDto';
 export * from './startImportDtoDefaultStatus';
 export * from './startImportDtoDuplicateResolutions';

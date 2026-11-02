@@ -12,12 +12,14 @@ export interface ImageItem {
 
 interface SortableImageProps {
   image: ImageItem;
+  /** Заменено ИИ-генерацией в этой сессии — бейдж «AI». */
+  isAi?: boolean;
   onSetMain: (id: string) => void;
   onDelete: (id: string) => void;
   onAltChange: (id: string, alt: string) => void;
 }
 
-export function SortableImage({ image, onSetMain, onDelete, onAltChange }: SortableImageProps) {
+export function SortableImage({ image, isAi, onSetMain, onDelete, onAltChange }: SortableImageProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: image.id,
   });
@@ -82,6 +84,13 @@ export function SortableImage({ image, onSetMain, onDelete, onAltChange }: Sorta
         {image.isMain && (
           <div className="absolute bottom-1 left-1 rounded bg-yellow-400 px-1.5 py-0.5 text-xs font-medium text-yellow-900">
             Главное
+          </div>
+        )}
+
+        {/* AI badge */}
+        {isAi && (
+          <div className="absolute bottom-1 right-1 rounded bg-primary-500 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
+            AI
           </div>
         )}
       </div>
