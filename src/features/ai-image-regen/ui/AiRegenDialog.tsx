@@ -345,6 +345,12 @@ export function AiRegenDialog({
                     {analysis.brandArtifacts}
                   </p>
                 )}
+                {analysis.infoText && (
+                  <p className="sm:col-span-2 rounded-md bg-emerald-50 px-2 py-1 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                    <span className="font-medium">Текст на фото (сохранится как есть):</span>{' '}
+                    {analysis.infoText}
+                  </p>
+                )}
               </div>
               {analysis.scenes.length > 0 && (
                 <div className="mt-3">

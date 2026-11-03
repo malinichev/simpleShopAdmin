@@ -53,6 +53,8 @@ export interface GarmentAnalysis {
   notes: string;
   /** Найденные логотипы/названия брендов/сайты/водяные знаки — удаляются при генерации. */
   brandArtifacts: string;
+  /** Прочий текст на фото (описания/подписи/размеры/инфо) — воспроизводится при генерации как есть. */
+  infoText: string;
   scenes: RegenPromptPreset[];
 }
 
