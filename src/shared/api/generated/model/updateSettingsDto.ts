@@ -12,6 +12,7 @@
  * https://api.svoybrand.shop/api/openapi.json — точка входа для ИИ-агентов (см. llms.txt).
  * OpenAPI spec version: 1.0
  */
+import type { AiImagePromptsDto } from './aiImagePromptsDto';
 import type { NotificationSettingsDto } from './notificationSettingsDto';
 import type { SocialLinksDto } from './socialLinksDto';
 
@@ -26,4 +27,6 @@ export interface UpdateSettingsDto {
   socialLinks?: SocialLinksDto;
   notifications?: NotificationSettingsDto;
   notificationEmail?: string;
+  /** Промпты ИИ-генерации фото: базовый стиль + пресеты сцен */
+  aiImagePrompts?: AiImagePromptsDto;
 }

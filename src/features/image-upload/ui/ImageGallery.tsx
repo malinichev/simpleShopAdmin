@@ -19,9 +19,11 @@ import { SortableImage, type ImageItem } from './SortableImage';
 interface ImageGalleryProps {
   images: ImageItem[];
   onChange: (images: ImageItem[]) => void;
+  /** id фото, заменённых ИИ-генерацией (бейдж «AI»). */
+  aiIds?: Set<string>;
 }
 
-export function ImageGallery({ images, onChange }: ImageGalleryProps) {
+export function ImageGallery({ images, onChange, aiIds }: ImageGalleryProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -75,6 +77,7 @@ export function ImageGallery({ images, onChange }: ImageGalleryProps) {
             <SortableImage
               key={image.id}
               image={image}
+              isAi={aiIds?.has(image.id) ?? false}
               onSetMain={handleSetMain}
               onDelete={handleDelete}
               onAltChange={handleAltChange}
