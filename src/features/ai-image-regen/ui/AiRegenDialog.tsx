@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Sparkles, CheckCircle, XCircle, Loader2, AlertTriangle, Wand2, ScanEye, RefreshCw, Copy, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
+import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { cn } from '@/shared/lib/utils';
 import { regenApi, type RegenJob, type GarmentAnalysis } from '../api/regenApi';
 import { useRegenJob } from '../model/useRegenJob';
+import { useRegenJobs } from '../model/useRegenJobs';
 import { useRegenConfig } from '../model/useRegenConfig';
 import { BeforeAfter } from './BeforeAfter';
+import { productsApi } from '@/features/product-management';
 import type { ImageItem } from '@/features/image-upload';
 
 export interface RegenReplacement {
@@ -16,128 +19,206 @@ export interface RegenReplacement {
   url: string;
 }
 
+/** Товар-цель: карточка товара передаёт один, список товаров — несколько. */
+export interface RegenTarget {
+  productId: string;
+  productName: string;
+  images: ImageItem[];
+}
+
 interface AiRegenDialogProps {
   open: boolean;
   onClose: () => void;
-  productId: string;
-  /** Текущие фото из формы товара (id = id фото в БД для сохранённого товара). */
-  images: ImageItem[];
-  /** Применить выбранные замены к форме (сохранение товара — штатной кнопкой). */
-  onApply: (replacements: RegenReplacement[]) => void;
+  /** Один или несколько товаров (bulk-режим со страницы списка). */
+  targets: RegenTarget[];
+  /**
+   * Bulk-режим (список товаров): открыть сразу на шаге промптов,
+   * все фото выбраны; применение — напрямую PATCH по товарам.
+   */
+  bulkMode?: boolean;
+  /** Один товар: применить замены к форме (сохранение — штатной кнопкой). */
+  onApply?: (replacements: RegenReplacement[]) => void;
+  /** Bulk: вызвать после применения (обновить списки). */
+  onDone?: () => void;
 }
 
 type Step = 'select' | 'prompt' | 'progress' | 'review';
 
 const MIN_PROMPT = 10;
 
+/** Плоский список фото с составным ключом productId::imageId (id фото уникальны лишь внутри товара). */
+interface FlatPhoto {
+  key: string;
+  productId: string;
+  productName: string;
+  imageId: string;
+  url: string;
+  isMain: boolean;
+}
+
 export function AiRegenDialog({
   open,
   onClose,
-  productId,
-  images,
+  targets,
+  bulkMode = false,
   onApply,
+  onDone,
 }: AiRegenDialogProps) {
   const { data: config } = useRegenConfig();
-  const [step, setStep] = useState<Step>('select');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const queryClient = useQueryClient();
+  const [step, setStep] = useState<Step>(bulkMode ? 'prompt' : 'select');
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [variantsPerImage, setVariantsPerImage] = useState(1);
-  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobIds, setJobIds] = useState<string[]>([]);
   // Ревью: выбранный вариант на каждое фото + отметка «заменить»
   const [chosenVariant, setChosenVariant] = useState<Record<string, number>>({});
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
   // Персонально для КАЖДОГО фото: анализ и промпт сцены
   const [analyses, setAnalyses] = useState<Record<string, GarmentAnalysis | null>>({});
   const [prompts, setPrompts] = useState<Record<string, string>>({});
-  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
+  const [analyzingKeys, setAnalyzingKeys] = useState<Set<string>>(new Set());
   // Разворот результата ревью на весь экран (lightbox «до/после»)
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [applyConfirmOpen, setApplyConfirmOpen] = useState(false);
 
-  const { data: job } = useRegenJob(jobId);
+  // Один товар → один job; bulk → список job'ов
+  const singleJob = useRegenJob(jobIds.length === 1 ? jobIds[0] : null);
+  const bulkJobs = useRegenJobs(jobIds.length > 1 ? jobIds : []);
+  const jobs: RegenJob[] = useMemo(
+    () => (jobIds.length === 1 && singleJob.data ? [singleJob.data] : bulkJobs.data ?? []),
+    [jobIds.length, singleJob.data, bulkJobs.data],
+  );
+  const allDone =
+    jobs.length > 0 && jobs.every((j) => j.status === 'completed' || j.status === 'failed');
 
-  // Как только job завершён — дефолты ревью и переход к шагу сравнения
+  const photos = useMemo<FlatPhoto[]>(
+    () =>
+      targets.flatMap((t) =>
+        t.images.map((img, i) => ({
+          key: `${t.productId}::${img.id}`,
+          productId: t.productId,
+          productName: t.productName,
+          imageId: img.id,
+          url: img.url,
+          isMain: img.isMain ?? i === 0,
+        })),
+      ),
+    [targets],
+  );
+  const photoByKey = useMemo(
+    () => new Map(photos.map((p) => [p.key, p])),
+    [photos],
+  );
+
+  // В bulk-режиме все фото выбраны сразу
   useEffect(() => {
-    if (step !== 'progress' || !job) return;
-    if (job.status !== 'completed' && job.status !== 'failed') return;
+    if (bulkMode && selectedKeys.size === 0 && photos.length > 0) {
+      setSelectedKeys(new Set(photos.map((p) => p.key)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkMode, photos]);
+
+  // Как только ВСЕ job'ы завершены — дефолты ревью и переход к сравнению
+  useEffect(() => {
+    if (step !== 'progress' || !allDone) return;
     const nextChosen: Record<string, number> = {};
     const nextAccepted: Record<string, boolean> = {};
-    for (const item of job.items) {
-      if (item.variants.length > 0) {
-        nextChosen[item.sourceImageId] = 0;
-        nextAccepted[item.sourceImageId] = true;
+    for (const job of jobs) {
+      for (const item of job.items) {
+        if (item.variants.length > 0) {
+          const key = `${job.productId}::${item.sourceImageId}`;
+          nextChosen[key] = 0;
+          nextAccepted[key] = true;
+        }
       }
     }
     setChosenVariant(nextChosen);
     setAccepted(nextAccepted);
     setStep('review');
-  }, [step, job]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, allDone]);
 
-  const selectionKey = useMemo(() => [...selectedIds].sort().join(','), [selectedIds]);
+  const selectionKey = useMemo(() => [...selectedKeys].sort().join(','), [selectedKeys]);
 
   const analyzeMutation = useMutation({
-    mutationFn: (imageId: string) =>
-      regenApi.analyze({ productId, imageIds: [imageId] }),
-    onSuccess: (result: GarmentAnalysis, imageId: string) => {
-      setAnalyses((prev) => ({ ...prev, [imageId]: result }));
-      // Готовая сцена под эту вещь — подставляем, если поле пустое
+    mutationFn: async (key: string) => {
+      const photo = photoByKey.get(key)!;
+      return regenApi.analyze({ productId: photo.productId, imageIds: [photo.imageId] });
+    },
+    onSuccess: (result: GarmentAnalysis, key: string) => {
+      setAnalyses((prev) => ({ ...prev, [key]: result }));
       setPrompts((prev) =>
-        prev[imageId]?.trim() || !result.scenes[0]?.prompt
+        prev[key]?.trim() || !result.scenes[0]?.prompt
           ? prev
-          : { ...prev, [imageId]: result.scenes[0].prompt },
+          : { ...prev, [key]: result.scenes[0].prompt },
       );
     },
-    onError: (error: unknown, imageId: string) => {
-      setAnalyses((prev) => ({ ...prev, [imageId]: null }));
+    onError: (error: unknown, key: string) => {
+      setAnalyses((prev) => ({ ...prev, [key]: null }));
       const message =
         (error as { response?: { data?: { message?: string[] | string } } })?.response
           ?.data?.message;
-      toast.warning(`Не удалось проанализировать фото`, {
+      toast.warning('Не удалось проанализировать фото', {
         description: `Промпт можно написать вручную. ${
           Array.isArray(message) ? message.join(', ') : message ?? ''
         }`,
       });
     },
-    onSettled: (_d, _e, imageId: string) => {
-      setAnalyzingIds((prev) => {
+    onSettled: (_d, _e, key: string) => {
+      setAnalyzingKeys((prev) => {
         const next = new Set(prev);
-        next.delete(imageId);
+        next.delete(key);
         return next;
       });
     },
   });
 
-  const runAnalysis = (ids: string[]) => {
-    for (const id of ids) {
-      if (analyses[id] !== undefined || analyzingIds.has(id)) continue;
-      setAnalyzingIds((prev) => new Set(prev).add(id));
-      analyzeMutation.mutate(id);
+  const runAnalysis = (keys: string[]) => {
+    for (const key of keys) {
+      if (analyses[key] !== undefined || analyzingKeys.has(key)) continue;
+      setAnalyzingKeys((prev) => new Set(prev).add(key));
+      analyzeMutation.mutate(key);
     }
   };
 
   // Автозапуск анализа КАЖДОГО выбранного фото при входе в шаг промптов
   useEffect(() => {
     if (step !== 'prompt' || !config?.enabled) return;
-    runAnalysis([...selectedIds]);
+    runAnalysis([...selectedKeys]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, selectionKey, config?.enabled]);
 
+  // Один job на товар (imageIds этого товара), последовательно
   const startMutation = useMutation({
-    mutationFn: () => {
-      const imagePrompts: Record<string, string> = {};
-      for (const id of selectedIds) {
-        const p = prompts[id]?.trim();
-        if (p) imagePrompts[id] = p;
+    mutationFn: async () => {
+      const byProduct = new Map<string, string[]>();
+      for (const key of selectedKeys) {
+        const photo = photoByKey.get(key)!;
+        const list = byProduct.get(photo.productId) ?? [];
+        list.push(photo.imageId);
+        byProduct.set(photo.productId, list);
       }
-      const fallback = Object.values(imagePrompts)[0] ?? 'сцена по умолчанию для фото';
-      return regenApi.start({
-        productId,
-        imageIds: [...selectedIds],
-        prompt: fallback,
-        imagePrompts,
-        variantsPerImage,
-      });
+      const created: string[] = [];
+      for (const [productId, imageIds] of byProduct) {
+        const imagePrompts: Record<string, string> = {};
+        for (const imageId of imageIds) {
+          const p = prompts[`${productId}::${imageId}`]?.trim();
+          if (p) imagePrompts[imageId] = p;
+        }
+        const fallback = Object.values(imagePrompts)[0] ?? 'сцена по умолчанию для фото';
+        const job = await regenApi.start({
+          productId,
+          imageIds,
+          prompt: fallback,
+          imagePrompts,
+          variantsPerImage,
+        });
+        created.push(job.id);
+      }
+      return created;
     },
-    onSuccess: (created: RegenJob) => {
-      setJobId(created.id);
+    onSuccess: (created: string[]) => {
+      setJobIds(created);
       setStep('progress');
     },
     onError: (error: unknown) => {
@@ -150,11 +231,11 @@ export function AiRegenDialog({
     },
   });
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
+  const toggleSelect = (key: string) => {
+    setSelectedKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -163,7 +244,7 @@ export function AiRegenDialog({
   const applyPresetToAll = (presetPrompt: string) => {
     setPrompts((prev) => {
       const next = { ...prev };
-      for (const id of selectedIds) next[id] = presetPrompt;
+      for (const key of selectedKeys) next[key] = presetPrompt;
       return next;
     });
   };
@@ -171,44 +252,98 @@ export function AiRegenDialog({
   const applySceneToAll = (scenePrompt: string) => {
     setPrompts((prev) => {
       const next = { ...prev };
-      for (const id of selectedIds) next[id] = scenePrompt;
+      for (const key of selectedKeys) next[key] = scenePrompt;
       return next;
     });
     toast.info('Сцена применена ко всем фото — поправь каждое индивидуально');
   };
 
+  const orderedSelected = useMemo(
+    () => photos.filter((p) => selectedKeys.has(p.key)),
+    [photos, selectedKeys],
+  );
+
   const handleStart = () => {
-    const short: number[] = [];
-    orderedSelected.forEach((img, i) => {
-      if ((prompts[img.id]?.trim().length ?? 0) < MIN_PROMPT) short.push(i + 1);
+    const short: string[] = [];
+    orderedSelected.forEach((p) => {
+      if ((prompts[p.key]?.trim().length ?? 0) < MIN_PROMPT) short.push(p.productName);
     });
     if (short.length > 0) {
       toast.error(`Промпт слишком короткий (минимум ${MIN_PROMPT} симв.)`, {
-        description: `Фото: ${short.join(', ')}`,
+        description: `Товары: ${[...new Set(short)].join(', ')}`,
       });
       return;
     }
     startMutation.mutate();
   };
 
-  const replacements = useMemo<RegenReplacement[]>(() => {
-    if (!job) return [];
-    const result: RegenReplacement[] = [];
-    for (const item of job.items) {
-      if (!accepted[item.sourceImageId]) continue;
-      const index = chosenVariant[item.sourceImageId] ?? 0;
-      const variant = item.variants[index];
-      if (variant) result.push({ imageId: item.sourceImageId, url: variant.url });
+  const replacements = useMemo(() => {
+    const result: Array<{ key: string; productId: string; imageId: string; url: string }> = [];
+    for (const job of jobs) {
+      for (const item of job.items) {
+        const key = `${job.productId}::${item.sourceImageId}`;
+        if (!accepted[key]) continue;
+        const variant = item.variants[chosenVariant[key] ?? 0];
+        if (variant) {
+          result.push({ key, productId: job.productId, imageId: item.sourceImageId, url: variant.url });
+        }
+      }
     }
     return result;
-  }, [job, accepted, chosenVariant]);
+  }, [jobs, accepted, chosenVariant]);
+
+  const applyDirectly = useMutation({
+    mutationFn: async () => {
+      const byProduct = new Map<string, Map<string, string>>();
+      for (const r of replacements) {
+        const map = byProduct.get(r.productId) ?? new Map<string, string>();
+        map.set(r.imageId, r.url);
+        byProduct.set(r.productId, map);
+      }
+      const results: string[] = [];
+      for (const [productId, urlByImageId] of byProduct) {
+        const target = targets.find((t) => t.productId === productId);
+        if (!target) continue;
+        const images = target.images.map((img, i) => ({
+          id: img.id,
+          url: urlByImageId.get(img.id) ?? img.url,
+          alt: img.alt,
+          order: img.isMain ? 0 : i + 1,
+        }));
+        await productsApi.updateImages(productId, images);
+        results.push(target.productName);
+      }
+      return results;
+    },
+    onSuccess: (names: string[]) => {
+      toast.success(`Заменены фото у товаров: ${names.length}`, {
+        description: names.join(', '),
+      });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      onDone?.();
+      resetAndClose();
+    },
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string[] | string } } })?.response
+          ?.data?.message;
+      toast.error('Ошибка применения', {
+        description: Array.isArray(message) ? message.join(', ') : message,
+      });
+    },
+  });
 
   const handleApply = () => {
     if (replacements.length === 0) {
       toast.info('Не выбрано ни одного фото для замены');
       return;
     }
-    onApply(replacements);
+    if (bulkMode) {
+      setApplyConfirmOpen(true);
+      return;
+    }
+    // одиночный режим: замены идут в форму товара (imageId уникальны в его рамках)
+    onApply?.(replacements.map((r) => ({ imageId: r.imageId, url: r.url })));
     toast.success(`Заменено фото: ${replacements.length}. Не забудьте сохранить товар`, {
       description: 'Новые фото пока только в форме — нажмите «Сохранить»/«Опубликовать»',
     });
@@ -216,37 +351,39 @@ export function AiRegenDialog({
   };
 
   const resetAndClose = () => {
-    setStep('select');
-    setSelectedIds(new Set());
+    setStep(bulkMode ? 'prompt' : 'select');
+    setSelectedKeys(new Set());
     setVariantsPerImage(1);
-    setJobId(null);
+    setJobIds([]);
     setChosenVariant({});
     setAccepted({});
     setAnalyses({});
     setPrompts({});
-    setAnalyzingIds(new Set());
-    setExpandedItemId(null);
+    setAnalyzingKeys(new Set());
+    setExpandedKey(null);
     onClose();
   };
 
-  /** Выбранные фото в порядке галереи. */
-  const orderedSelected = useMemo(
-    () => images.filter((img) => selectedIds.has(img.id)),
-    [images, selectedIds],
-  );
-
   // Esc закрывает полноэкранный просмотр
   useEffect(() => {
-    if (!expandedItemId) return;
+    if (!expandedKey) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setExpandedItemId(null);
+      if (e.key === 'Escape') setExpandedKey(null);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [expandedItemId]);
+  }, [expandedKey]);
 
-  const expandedItem =
-    job?.items.find((i) => i.sourceImageId === expandedItemId) ?? null;
+  const expanded = useMemo(() => {
+    if (!expandedKey) return null;
+    for (const job of jobs) {
+      const item = job.items.find((i) => `${job.productId}::${i.sourceImageId}` === expandedKey);
+      if (item) return { job, item };
+    }
+    return null;
+  }, [expandedKey, jobs]);
+
+  const singleProduct = targets.length === 1 ? targets[0] : null;
 
   return (
     <Modal
@@ -256,7 +393,9 @@ export function AiRegenDialog({
       description={
         config?.driver === 'stub'
           ? 'Сервер работает в режиме заглушки (stub) — фото будут плашками-заглушками'
-          : `Модель: ${config?.model || '—'} · у каждого фото свой анализ и своя сцена · результат 3:4`
+          : `Модель: ${config?.model || '—'} · у каждого фото свой анализ и своя сцена · результат 3:4${
+              bulkMode ? ` · товаров: ${targets.length}` : ''
+            }`
       }
       className="max-w-3xl max-h-[90vh] overflow-y-auto"
     >
@@ -296,22 +435,22 @@ export function AiRegenDialog({
         })}
       </ol>
 
-      {/* ===== Шаг 1: выбор фото ===== */}
-      {step === 'select' && (
+      {/* ===== Шаг 1: выбор фото (одиночный режим) ===== */}
+      {step === 'select' && singleProduct && (
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            Отметьте фото, которые нужно перегенерировать ({selectedIds.size} из{' '}
-            {images.length}) — у каждого будет свой анализ и своя сцена
+            Отметьте фото, которые нужно перегенерировать ({selectedKeys.size} из{' '}
+            {photos.length}) — у каждого будет свой анализ и своя сцена
           </p>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {images.map((img, index) => {
-              const isSelected = selectedIds.has(img.id);
+            {photos.map((photo, index) => {
+              const isSelected = selectedKeys.has(photo.key);
               return (
                 <button
-                  key={img.id}
+                  key={photo.key}
                   type="button"
                   aria-label={`Фото ${index + 1}${isSelected ? ' — выбрано' : ''}`}
-                  onClick={() => toggleSelect(img.id)}
+                  onClick={() => toggleSelect(photo.key)}
                   className={cn(
                     'group relative overflow-hidden rounded-lg border-2 transition-all',
                     isSelected
@@ -320,9 +459,9 @@ export function AiRegenDialog({
                   )}
                 >
                   <div className="aspect-square">
-                    <img src={img.url} alt={img.alt || 'Фото товара'} className="h-full w-full object-cover" />
+                    <img src={photo.url} alt="Фото товара" className="h-full w-full object-cover" />
                   </div>
-                  {img.isMain && (
+                  {photo.isMain && (
                     <span className="absolute left-1 top-1 rounded bg-yellow-400 px-1.5 py-0.5 text-[10px] font-medium text-yellow-900">
                       Главное
                     </span>
@@ -345,7 +484,7 @@ export function AiRegenDialog({
             <Button variant="outline" onClick={resetAndClose}>
               Отмена
             </Button>
-            <Button disabled={selectedIds.size === 0} onClick={() => setStep('prompt')}>
+            <Button disabled={selectedKeys.size === 0} onClick={() => setStep('prompt')}>
               Далее: анализ и промпты
             </Button>
           </div>
@@ -376,123 +515,40 @@ export function AiRegenDialog({
             </div>
           )}
 
-          {orderedSelected.map((img, index) => {
-            const analysis = analyses[img.id];
-            const analyzing = analyzingIds.has(img.id);
-            const value = prompts[img.id] ?? '';
+          {targets.map((target) => {
+            const targetPhotos = orderedSelected.filter((p) => p.productId === target.productId);
+            if (targetPhotos.length === 0) return null;
             return (
-              <div
-                key={img.id}
-                className="space-y-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-              >
-                <div className="flex items-start gap-3">
-                  <img
-                    src={img.url}
-                    alt={img.alt || `Фото ${index + 1}`}
-                    className="h-16 w-12 shrink-0 rounded-md border border-gray-200 object-cover dark:border-gray-700"
-                  />
-                  <div className="min-w-0 flex-1">
-                    {analyzing ? (
-                      <p className="flex items-center gap-2 text-sm text-gray-500">
-                        <ScanEye className="h-4 w-4 animate-pulse text-primary-500" />
-                        Анализирую фото {index + 1}: вещь, кто в кадре, сцены…
-                      </p>
-                    ) : analysis ? (
-                      <>
-                        <p className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
-                          <ScanEye className="h-4 w-4 shrink-0 text-primary-600" />
-                          {analysis.garmentType}
-                          <button
-                            type="button"
-                            aria-label={`Повторить анализ фото ${index + 1}`}
-                            title="Повторить анализ"
-                            onClick={() => {
-                              setAnalyses((prev) => {
-                                const next = { ...prev };
-                                delete next[img.id];
-                                return next;
-                              });
-                              runAnalysis([img.id]);
-                            }}
-                            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5" />
-                          </button>
-                        </p>
-                        <div className="mt-1 space-y-1 text-xs text-gray-600 dark:text-gray-300">
-                          {analysis.subject && (
-                            <p>
-                              <span className="text-gray-400">Кто в кадре (сохранится):</span> {analysis.subject}
-                            </p>
-                          )}
-                          {analysis.brandArtifacts && (
-                            <p className="rounded bg-amber-50 px-2 py-0.5 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                              <span className="font-medium">Бренды (удалятся):</span> {analysis.brandArtifacts}
-                            </p>
-                          )}
-                          {analysis.infoText && (
-                            <p className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                              <span className="font-medium">Текст (сохранится):</span> {analysis.infoText}
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-xs text-gray-400">
-                        Анализ недоступен — напишите сцену вручную
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {analysis && analysis.scenes.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {analysis.scenes.map((scene) => (
-                      <button
-                        key={scene.title + scene.prompt.slice(0, 24)}
-                        type="button"
-                        onClick={() =>
-                          setPrompts((prev) => ({ ...prev, [img.id]: scene.prompt }))
-                        }
-                        className="rounded-full border border-primary-300 bg-white px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-700 dark:bg-gray-800 dark:text-primary-300 dark:hover:bg-gray-700"
-                      >
-                        <Sparkles className="mr-1 inline h-3 w-3" />
-                        {scene.title}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => applySceneToAll(value)}
-                      disabled={!value.trim()}
-                      className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40"
-                      title="Скопировать текущую сцену этого фото во все остальные"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      применить ко всем
-                    </button>
-                  </div>
-                )}
-
-                <div>
-                  <textarea
-                    value={value}
-                    onChange={(e) =>
-                      setPrompts((prev) => ({ ...prev, [img.id]: e.target.value }))
-                    }
-                    aria-label={`Промпт сцены — фото ${index + 1}`}
-                    rows={3}
-                    placeholder={`Сцена для фото ${index + 1}: например, девушка в этой пижаме пьёт чай перед сном…`}
-                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-primary-500 focus:outline-none dark:border-gray-600"
-                  />
-                  <p
-                    className={cn(
-                      'mt-1 text-right text-xs',
-                      value.trim().length < MIN_PROMPT ? 'text-red-400' : 'text-gray-400',
-                    )}
-                  >
-                    {value.trim().length} / 4000
+              <div key={target.productId} className="space-y-3">
+                {targets.length > 1 && (
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    {target.productName}
+                    <span className="ml-2 text-xs font-normal text-gray-400">
+                      фото: {targetPhotos.length}
+                    </span>
                   </p>
-                </div>
+                )}
+                {targetPhotos.map((photo) => (
+                  <PhotoPromptCard
+                    key={photo.key}
+                    photo={photo}
+                    index={photos.findIndex((p) => p.key === photo.key) + 1}
+                    analysis={analyses[photo.key]}
+                    analyzing={analyzingKeys.has(photo.key)}
+                    value={prompts[photo.key] ?? ''}
+                    onValueChange={(v) => setPrompts((prev) => ({ ...prev, [photo.key]: v }))}
+                    onScene={(v) => setPrompts((prev) => ({ ...prev, [photo.key]: v }))}
+                    onApplyToAll={applySceneToAll}
+                    onReanalyze={() => {
+                      setAnalyses((prev) => {
+                        const next = { ...prev };
+                        delete next[photo.key];
+                        return next;
+                      });
+                      runAnalysis([photo.key]);
+                    }}
+                  />
+                ))}
               </div>
             );
           })}
@@ -529,114 +585,118 @@ export function AiRegenDialog({
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setStep('select')}>
-              Назад
-            </Button>
+            {!bulkMode && (
+              <Button variant="outline" onClick={() => setStep('select')}>
+                Назад
+              </Button>
+            )}
             <Button loading={startMutation.isPending} onClick={handleStart}>
               <Wand2 className="h-4 w-4" />
-              Сгенерировать ({selectedIds.size} фото)
+              Сгенерировать ({selectedKeys.size} фото{bulkMode ? `, ${targets.length} товаров` : ''})
             </Button>
           </div>
         </div>
       )}
 
       {/* ===== Шаг 3: прогресс ===== */}
-      {step === 'progress' && <ProgressView job={job ?? null} />}
+      {step === 'progress' && <ProgressView jobs={jobs} />}
 
       {/* ===== Шаг 4: ревью ===== */}
-      {step === 'review' && job && (
+      {step === 'review' && jobs.length > 0 && (
         <div className="space-y-5">
-          {job.status === 'failed' && (
+          {jobs.some((j) => j.status === 'failed') && (
             <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
               <XCircle className="h-5 w-5 shrink-0" />
-              <span>
-                Генерация не удалась:{' '}
-                {job.errors?.[0]?.message || 'все фото завершились ошибкой'}
-              </span>
+              <span>Часть задач завершилась ошибкой — смотрите статусы ниже</span>
             </div>
           )}
 
-          {job.items
-            .filter((item) => item.variants.length > 0 || item.error)
-            .map((item) => {
-              const variantIndex = chosenVariant[item.sourceImageId] ?? 0;
-              const variant = item.variants[variantIndex];
-              const isAccepted = accepted[item.sourceImageId] ?? false;
-              return (
-                <div
-                  key={item.sourceImageId}
-                  className="grid grid-cols-1 gap-4 rounded-lg border border-gray-200 p-3 sm:grid-cols-[minmax(0,240px)_1fr] dark:border-gray-700"
-                >
-                  <div className="relative">
-                    <BeforeAfter before={item.sourceUrl} after={variant?.url ?? item.sourceUrl} />
-                    {item.variants.length > 0 && (
-                      <button
-                        type="button"
-                        aria-label="Развернуть на весь экран"
-                        title="Развернуть на весь экран"
-                        onClick={() => setExpandedItemId(item.sourceImageId)}
-                        className="absolute bottom-3 right-3 z-20 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
-                      >
-                        <Maximize2 className="h-4 w-4" />
-                      </button>
-                    )}
+          {jobs.flatMap((job) => {
+            const target = targets.find((t) => t.productId === job.productId);
+            return job.items
+              .filter((item) => item.variants.length > 0 || item.error)
+              .map((item) => {
+                const key = `${job.productId}::${item.sourceImageId}`;
+                const variantIndex = chosenVariant[key] ?? 0;
+                const variant = item.variants[variantIndex];
+                const isAccepted = accepted[key] ?? false;
+                return (
+                  <div
+                    key={key}
+                    className="grid grid-cols-1 gap-4 rounded-lg border border-gray-200 p-3 sm:grid-cols-[minmax(0,240px)_1fr] dark:border-gray-700"
+                  >
+                    <div className="relative">
+                      <BeforeAfter before={item.sourceUrl} after={variant?.url ?? item.sourceUrl} />
+                      {item.variants.length > 0 && (
+                        <button
+                          type="button"
+                          aria-label="Развернуть на весь экран"
+                          title="Развернуть на весь экран"
+                          onClick={() => setExpandedKey(key)}
+                          className="absolute bottom-3 right-3 z-20 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+                        >
+                          <Maximize2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {jobs.length > 1 && (
+                        <p className="truncate text-xs text-gray-400" title={target?.productName}>
+                          {target?.productName}
+                        </p>
+                      )}
+                      {item.variants.length > 1 && (
+                        <div className="flex gap-2">
+                          {item.variants.map((v, i) => (
+                            <button
+                              key={v.url}
+                              type="button"
+                              onClick={() => setChosenVariant((prev) => ({ ...prev, [key]: i }))}
+                              className={cn(
+                                'overflow-hidden rounded-md border-2',
+                                i === variantIndex ? 'border-primary-500' : 'border-gray-200 dark:border-gray-700',
+                              )}
+                            >
+                              <img src={v.thumbUrl} alt={`Вариант ${i + 1}`} className="h-16 w-12 object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {item.error && (
+                        <p className="flex items-start gap-1.5 text-sm text-red-600">
+                          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                          {item.error}
+                        </p>
+                      )}
+                      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          checked={isAccepted}
+                          disabled={item.variants.length === 0}
+                          onChange={(e) =>
+                            setAccepted((prev) => ({ ...prev, [key]: e.target.checked }))
+                          }
+                          className="h-4 w-4 rounded border-gray-300 accent-primary-600"
+                        />
+                        Заменить исходное фото этим вариантом
+                      </label>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {item.variants.length > 1 && (
-                      <div className="flex gap-2">
-                        {item.variants.map((v, i) => (
-                          <button
-                            key={v.url}
-                            type="button"
-                            onClick={() =>
-                              setChosenVariant((prev) => ({ ...prev, [item.sourceImageId]: i }))
-                            }
-                            className={cn(
-                              'overflow-hidden rounded-md border-2',
-                              i === variantIndex ? 'border-primary-500' : 'border-gray-200 dark:border-gray-700',
-                            )}
-                          >
-                            <img src={v.thumbUrl} alt={`Вариант ${i + 1}`} className="h-16 w-12 object-cover" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {item.error && (
-                      <p className="flex items-start gap-1.5 text-sm text-red-600">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        {item.error}
-                      </p>
-                    )}
-                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <input
-                        type="checkbox"
-                        checked={isAccepted}
-                        disabled={item.variants.length === 0}
-                        onChange={(e) =>
-                          setAccepted((prev) => ({
-                            ...prev,
-                            [item.sourceImageId]: e.target.checked,
-                          }))
-                        }
-                        className="h-4 w-4 rounded border-gray-300 accent-primary-600"
-                      />
-                      Заменить исходное фото этим вариантом
-                    </label>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              });
+          })}
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              К замене: {replacements.length} из {job.items.length}
+              К замене: {replacements.length} из{' '}
+              {jobs.reduce((acc, j) => acc + j.items.length, 0)}
             </p>
             <div className="flex gap-3">
               <Button variant="outline" onClick={resetAndClose}>
                 Отклонить всё
               </Button>
               <Button onClick={handleApply} disabled={replacements.length === 0}>
-                Применить к форме
+                {bulkMode ? 'Заменить у товаров' : 'Применить к форме'}
               </Button>
             </div>
           </div>
@@ -644,15 +704,15 @@ export function AiRegenDialog({
       )}
 
       {/* ===== Полноэкранный просмотр «до/после» ===== */}
-      {expandedItem && (
+      {expanded && (
         <div
           className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 p-4"
-          onClick={() => setExpandedItemId(null)}
+          onClick={() => setExpandedKey(null)}
         >
           <button
             type="button"
             aria-label="Закрыть просмотр"
-            onClick={() => setExpandedItemId(null)}
+            onClick={() => setExpandedKey(null)}
             className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25"
           >
             <XCircle className="h-6 w-6" />
@@ -664,29 +724,29 @@ export function AiRegenDialog({
             {/* 3:4: ширина ограничена высотой (75vh) и шириной экрана */}
             <div className="w-[min(92vw,calc(72vh*0.75))]">
               <BeforeAfter
-                before={expandedItem.sourceUrl}
+                before={expanded.item.sourceUrl}
                 after={
-                  expandedItem.variants[chosenVariant[expandedItem.sourceImageId] ?? 0]?.url ??
-                  expandedItem.sourceUrl
+                  expanded.item.variants[chosenVariant[expandedKey!] ?? 0]?.url ??
+                  expanded.item.sourceUrl
                 }
                 className="max-h-[72vh]"
               />
             </div>
-            {expandedItem.variants.length > 1 && (
+            {expanded.item.variants.length > 1 && (
               <div className="flex gap-2">
-                {expandedItem.variants.map((v, i) => (
+                {expanded.item.variants.map((v, i) => (
                   <button
                     key={v.url}
                     type="button"
                     onClick={() =>
                       setChosenVariant((prev) => ({
                         ...prev,
-                        [expandedItem.sourceImageId]: i,
+                        [expandedKey!]: i,
                       }))
                     }
                     className={cn(
                       'overflow-hidden rounded-md border-2 transition-colors',
-                      i === (chosenVariant[expandedItem.sourceImageId] ?? 0)
+                      i === (chosenVariant[expandedKey!] ?? 0)
                         ? 'border-white'
                         : 'border-white/30 hover:border-white/60',
                     )}
@@ -702,34 +762,180 @@ export function AiRegenDialog({
           </div>
         </div>
       )}
+
+      {/* Подтверждение прямого bulk-применения */}
+      <ConfirmDialog
+        open={applyConfirmOpen}
+        title="Заменить фото напрямую у товаров?"
+        description={`Будет обновлено ${replacements.length} фото у ${
+          new Set(replacements.map((r) => r.productId)).size
+        } товар(ов) сразу, без кнопки «Сохранить». Исходные фото остаются в истории задач.`}
+        confirmText="Заменить"
+        loading={applyDirectly.isPending}
+        onConfirm={() => {
+          applyDirectly.mutate();
+          setApplyConfirmOpen(false);
+        }}
+        onCancel={() => setApplyConfirmOpen(false)}
+      />
     </Modal>
   );
 }
 
-function ProgressView({ job }: { job: RegenJob | null }) {
-  const percentage = job
-    ? job.totalImages > 0
-      ? Math.round((job.processedImages / job.totalImages) * 100)
-      : 0
-    : 0;
-  const isActive = !job || job.status === 'pending' || job.status === 'processing';
+/** Карточка «одно фото: анализ + сцена» (общая для одиночного и bulk-режима). */
+interface PhotoPromptCardProps {
+  photo: FlatPhoto;
+  index: number;
+  analysis?: GarmentAnalysis | null;
+  analyzing: boolean;
+  value: string;
+  onValueChange: (v: string) => void;
+  onScene: (v: string) => void;
+  onApplyToAll: (v: string) => void;
+  onReanalyze: () => void;
+}
+
+function PhotoPromptCard({
+  photo,
+  index,
+  analysis,
+  analyzing,
+  value,
+  onValueChange,
+  onScene,
+  onApplyToAll,
+  onReanalyze,
+}: PhotoPromptCardProps) {
+  return (
+    <div className="space-y-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+      <div className="flex items-start gap-3">
+        <img
+          src={photo.url}
+          alt={`Фото ${index}`}
+          className="h-16 w-12 shrink-0 rounded-md border border-gray-200 object-cover dark:border-gray-700"
+        />
+        <div className="min-w-0 flex-1">
+          {analyzing ? (
+            <p className="flex items-center gap-2 text-sm text-gray-500">
+              <ScanEye className="h-4 w-4 animate-pulse text-primary-500" />
+              Анализирую фото {index}: вещь, кто в кадре, сцены…
+            </p>
+          ) : analysis ? (
+            <>
+              <p className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                <ScanEye className="h-4 w-4 shrink-0 text-primary-600" />
+                {analysis.garmentType}
+                <button
+                  type="button"
+                  aria-label={`Повторить анализ фото ${index}`}
+                  title="Повторить анализ"
+                  onClick={onReanalyze}
+                  className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              </p>
+              <div className="mt-1 space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                {analysis.subject && (
+                  <p>
+                    <span className="text-gray-400">Кто в кадре (сохранится):</span> {analysis.subject}
+                  </p>
+                )}
+                {analysis.brandArtifacts && (
+                  <p className="rounded bg-amber-50 px-2 py-0.5 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                    <span className="font-medium">Бренды (удалятся):</span> {analysis.brandArtifacts}
+                  </p>
+                )}
+                {analysis.infoText && (
+                  <p className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                    <span className="font-medium">Текст (сохранится):</span> {analysis.infoText}
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-400">Анализ недоступен — напишите сцену вручную</p>
+          )}
+        </div>
+      </div>
+
+      {analysis && analysis.scenes.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {analysis.scenes.map((scene) => (
+            <button
+              key={scene.title + scene.prompt.slice(0, 24)}
+              type="button"
+              onClick={() => onScene(scene.prompt)}
+              className="rounded-full border border-primary-300 bg-white px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-700 dark:bg-gray-800 dark:text-primary-300 dark:hover:bg-gray-700"
+            >
+              <Sparkles className="mr-1 inline h-3 w-3" />
+              {scene.title}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => onApplyToAll(value)}
+            disabled={!value.trim()}
+            className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40"
+            title="Скопировать текущую сцену этого фото во все остальные"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            применить ко всем
+          </button>
+        </div>
+      )}
+
+      <div>
+        <textarea
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          aria-label={`Промпт сцены — фото ${index}`}
+          rows={3}
+          placeholder={`Сцена для фото ${index}: например, девушка в этой пижаме пьёт чай перед сном…`}
+          className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-primary-500 focus:outline-none dark:border-gray-600"
+        />
+        <p
+          className={cn(
+            'mt-1 text-right text-xs',
+            value.trim().length < MIN_PROMPT ? 'text-red-400' : 'text-gray-400',
+          )}
+        >
+          {value.trim().length} / 4000
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ProgressView({ jobs }: { jobs: RegenJob[] }) {
+  const totals = jobs.reduce(
+    (acc, j) => ({
+      total: acc.total + j.totalImages,
+      done: acc.done + j.processedImages,
+    }),
+    { total: 0, done: 0 },
+  );
+  const percentage = totals.total > 0 ? Math.round((totals.done / totals.total) * 100) : 0;
+  const anyActive = jobs.length === 0 || jobs.some((j) => j.status === 'pending' || j.status === 'processing');
+  const allDone = jobs.length > 0 && jobs.every((j) => j.status === 'completed' || j.status === 'failed');
+  const failedAll = jobs.length > 0 && jobs.every((j) => j.status === 'failed');
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        {isActive && <Loader2 className="h-6 w-6 animate-spin text-primary-500" />}
-        {job?.status === 'completed' && <CheckCircle className="h-6 w-6 text-green-500" />}
-        {job?.status === 'failed' && <XCircle className="h-6 w-6 text-red-500" />}
+        {anyActive && <Loader2 className="h-6 w-6 animate-spin text-primary-500" />}
+        {allDone && !failedAll && <CheckCircle className="h-6 w-6 text-green-500" />}
+        {failedAll && <XCircle className="h-6 w-6 text-red-500" />}
         <div>
           <p className="font-medium text-gray-900 dark:text-white">
-            {!job && 'Постановка в очередь...'}
-            {job?.status === 'pending' && 'Ожидание обработки...'}
-            {job?.status === 'processing' && 'Генерация фото (у каждого свой промпт)...'}
-            {job?.status === 'completed' && 'Генерация завершена'}
-            {job?.status === 'failed' && 'Генерация не удалась'}
+            {jobs.length === 0 && 'Постановка в очередь...'}
+            {anyActive && jobs.length > 0 &&
+              `Генерация фото (${jobs.length} ${jobs.length === 1 ? 'задача' : 'задач'}, у каждого фото свой промпт)...`}
+            {allDone && !failedAll && 'Генерация завершена'}
+            {failedAll && 'Генерация не удалась'}
           </p>
           <p className="text-sm text-gray-500">
-            Модель: {job?.model} · можно закрыть диалог, задача продолжит выполняться
+            Модель: {jobs[0]?.model} · можно закрыть диалог, задачи продолжат выполняться
           </p>
         </div>
       </div>
@@ -738,75 +944,68 @@ function ProgressView({ job }: { job: RegenJob | null }) {
         <div className="mb-1 flex justify-between text-sm">
           <span className="text-gray-500">Прогресс</span>
           <span className="text-gray-700 dark:text-gray-300">
-            {job?.processedImages ?? 0} / {job?.totalImages ?? 0} ({percentage}%)
+            {totals.done} / {totals.total} ({percentage}%)
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div
             className={cn(
               'h-full rounded-full transition-all duration-300',
-              job?.status === 'failed'
-                ? 'bg-red-500'
-                : job?.status === 'completed'
-                  ? 'bg-green-500'
-                  : 'bg-primary-500',
+              failedAll ? 'bg-red-500' : !anyActive ? 'bg-green-500' : 'bg-primary-500',
             )}
             style={{ width: `${percentage}%` }}
           />
         </div>
       </div>
 
-      {job && job.items.length > 0 && (
-        <ul className="space-y-2 text-sm">
-          {job.items.map((item) => {
-            const ready = item.variants[0];
-            return (
-              <li
-                key={item.sourceImageId}
-                className="flex items-center gap-3 rounded-md border border-gray-100 p-2 dark:border-gray-800"
-              >
-                {ready ? (
-                  <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
-                ) : item.error ? (
-                  <XCircle className="h-4 w-4 shrink-0 text-red-500" />
-                ) : (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gray-400" />
-                )}
-                {/* исходник → результат, как только готов */}
+      {jobs.flatMap((job) =>
+        job.items.map((item) => {
+          const ready = item.variants[0];
+          return (
+            <div
+              key={`${job.productId}:${item.sourceImageId}`}
+              className="flex items-center gap-3 rounded-md border border-gray-100 p-2 text-sm dark:border-gray-800"
+            >
+              {ready ? (
+                <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+              ) : item.error ? (
+                <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+              ) : (
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gray-400" />
+              )}
+              <img
+                src={item.sourceUrl}
+                alt="Исходник"
+                className="h-12 w-9 shrink-0 rounded border border-gray-200 object-cover dark:border-gray-700"
+              />
+              {ready ? (
                 <img
-                  src={item.sourceUrl}
-                  alt="Исходник"
-                  className="h-12 w-9 shrink-0 rounded border border-gray-200 object-cover dark:border-gray-700"
+                  src={ready.thumbUrl}
+                  alt="Сгенерировано"
+                  className="h-12 w-9 shrink-0 rounded border border-green-300 object-cover dark:border-green-800"
                 />
-                {ready ? (
-                  <img
-                    src={ready.thumbUrl}
-                    alt="Сгенерировано"
-                    className="h-12 w-9 shrink-0 rounded border border-green-300 object-cover dark:border-green-800"
-                  />
-                ) : (
-                  <div className="h-12 w-9 shrink-0 rounded border border-dashed border-gray-300 dark:border-gray-600" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-gray-600 dark:text-gray-300" title={item.sourceUrl}>
-                    {item.sourceUrl.split('/').pop()}
+              ) : (
+                <div className="h-12 w-9 shrink-0 rounded border border-dashed border-gray-300 dark:border-gray-600" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-gray-600 dark:text-gray-300" title={item.sourceUrl}>
+                  {item.sourceUrl.split('/').pop()}
+                </p>
+                {item.error ? (
+                  <p className="truncate text-xs text-red-500" title={item.error}>
+                    {item.error}
                   </p>
-                  {item.error ? (
-                    <p className="truncate text-xs text-red-500" title={item.error}>
-                      {item.error}
+                ) : (
+                  item.prompt && (
+                    <p className="truncate text-xs text-gray-400" title={item.prompt}>
+                      {item.prompt}
                     </p>
-                  ) : (
-                    item.prompt && (
-                      <p className="truncate text-xs text-gray-400" title={item.prompt}>
-                        {item.prompt}
-                      </p>
-                    )
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                  )
+                )}
+              </div>
+            </div>
+          );
+        }),
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, RefreshCw } from 'lucide-react';
+import { Trash2, RefreshCw, ScanEye } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import {
@@ -17,6 +17,9 @@ interface BulkActionsBarProps {
   onDelete: () => void;
   onStatusChange: (status: ProductStatus) => void;
   deleteLoading?: boolean;
+  /** ИИ-проверка фото выбранных товаров (image-regen) — опционально. */
+  onAiCheck?: () => void;
+  aiCheckLoading?: boolean;
 }
 
 export function BulkActionsBar({
@@ -24,6 +27,8 @@ export function BulkActionsBar({
   onDelete,
   onStatusChange,
   deleteLoading,
+  onAiCheck,
+  aiCheckLoading,
 }: BulkActionsBarProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -37,6 +42,13 @@ export function BulkActionsBar({
         </span>
 
         <div className="mx-2 h-5 w-px bg-primary-200 dark:bg-primary-700" />
+
+        {onAiCheck && (
+          <Button variant="outline" size="sm" loading={aiCheckLoading} onClick={onAiCheck}>
+            <ScanEye className="h-4 w-4" />
+            Проверить фото (ИИ)
+          </Button>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

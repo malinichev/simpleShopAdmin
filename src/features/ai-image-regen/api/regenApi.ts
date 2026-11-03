@@ -98,4 +98,9 @@ export const regenApi = {
     const { data } = await api.get<RegenJob>(`/image-regen/jobs/${id}`);
     return data;
   },
+
+  /** Bulk-режим: один job на товар — статусы всех разом. */
+  getJobs: async (ids: string[]): Promise<RegenJob[]> => {
+    return Promise.all(ids.map((id) => regenApi.getJob(id)));
+  },
 };

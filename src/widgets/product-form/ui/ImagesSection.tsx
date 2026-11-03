@@ -18,6 +18,7 @@ export function ImagesSection() {
   const { id: productId } = useParams<{ id: string }>();
   const { watch, setValue } = useFormContext<ProductFormData>();
   const rawImages = watch('images');
+  const productName = watch('name');
   const images = useMemo(() => rawImages ?? [], [rawImages]);
 
   const { data: regenConfig } = useRegenConfig();
@@ -124,8 +125,13 @@ export function ImagesSection() {
           <AiRegenDialog
             open={aiDialogOpen}
             onClose={() => setAiDialogOpen(false)}
-            productId={productId}
-            images={galleryImages}
+            targets={[
+              {
+                productId,
+                productName: productName || 'Товар',
+                images: galleryImages,
+              },
+            ]}
             onApply={handleApplyRegen}
           />
         )}
