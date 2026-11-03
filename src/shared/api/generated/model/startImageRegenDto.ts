@@ -12,6 +12,7 @@
  * https://api.svoybrand.shop/api/openapi.json — точка входа для ИИ-агентов (см. llms.txt).
  * OpenAPI spec version: 1.0
  */
+import type { StartImageRegenDtoImagePrompts } from './startImageRegenDtoImagePrompts';
 import type { StartImageRegenDtoVariantsPerImage } from './startImageRegenDtoVariantsPerImage';
 
 export interface StartImageRegenDto {
@@ -24,11 +25,13 @@ export interface StartImageRegenDto {
      */
   imageIds: string[];
   /**
-     * Промпт сцены (что должно быть на фото)
+     * Промпт сцены по умолчанию (для фото без персонального промпта)
      * @minLength 10
      * @maxLength 4000
      */
   prompt: string;
+  /** Персональный промпт сцены для каждого фото: imageId → промпт (у фото свой субъект/ракурс/сцена). Ключи должны быть из imageIds; фото без записи используют общий prompt */
+  imagePrompts?: StartImageRegenDtoImagePrompts;
   /** Сколько вариантов генерировать на каждое фото */
   variantsPerImage?: StartImageRegenDtoVariantsPerImage;
 }

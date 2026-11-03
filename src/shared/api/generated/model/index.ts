@@ -162,6 +162,7 @@ export * from './setPasswordDto';
 export * from './shippingAddressDto';
 export * from './socialLinksDto';
 export * from './startImageRegenDto';
+export * from './startImageRegenDtoImagePrompts';
 export * from './startImageRegenDtoVariantsPerImage';
 export * from './startImportDto';
 export * from './startImportDtoDefaultStatus';

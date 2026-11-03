@@ -8,6 +8,10 @@ export interface RegenVariant {
 export interface RegenItem {
   sourceImageId: string;
   sourceUrl: string;
+  /** Персональная сцена этого фото. */
+  prompt?: string;
+  /** Полный промпт этого фото (база + сцена + тех-суффикс). */
+  composedPrompt?: string;
   variants: RegenVariant[];
   error?: string;
 }
@@ -20,6 +24,7 @@ export interface RegenJob {
   composedPrompt: string;
   model: string;
   items: RegenItem[];
+  // RegenItem включает персональные prompt/composedPrompt (см. RegenItem)
   totalImages: number;
   processedImages: number;
   successCount: number;
@@ -81,6 +86,8 @@ export const regenApi = {
     productId: string;
     imageIds: string[];
     prompt: string;
+    /** Персональный промпт сцены для каждого фото (imageId → промпт). */
+    imagePrompts?: Record<string, string>;
     variantsPerImage?: number;
   }): Promise<RegenJob> => {
     const { data } = await api.post<RegenJob>('/image-regen/jobs', params);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Sparkles, CheckCircle, XCircle, Loader2, AlertTriangle, Wand2, ScanEye, RefreshCw } from 'lucide-react';
+import { Sparkles, CheckCircle, XCircle, Loader2, AlertTriangle, Wand2, ScanEye, RefreshCw, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
@@ -28,6 +28,8 @@ interface AiRegenDialogProps {
 
 type Step = 'select' | 'prompt' | 'progress' | 'review';
 
+const MIN_PROMPT = 10;
+
 export function AiRegenDialog({
   open,
   onClose,
@@ -38,15 +40,15 @@ export function AiRegenDialog({
   const { data: config } = useRegenConfig();
   const [step, setStep] = useState<Step>('select');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [prompt, setPrompt] = useState('');
   const [variantsPerImage, setVariantsPerImage] = useState(1);
   const [jobId, setJobId] = useState<string | null>(null);
   // Ревью: выбранный вариант на каждое фото + отметка «заменить»
   const [chosenVariant, setChosenVariant] = useState<Record<string, number>>({});
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
-  // Vision-анализ выбранных фото (авто при входе в шаг промпта)
-  const [analysis, setAnalysis] = useState<GarmentAnalysis | null>(null);
-  const [analysisKey, setAnalysisKey] = useState<string | null>(null);
+  // Персонально для КАЖДОГО фото: анализ и промпт сцены
+  const [analyses, setAnalyses] = useState<Record<string, GarmentAnalysis | null>>({});
+  const [prompts, setPrompts] = useState<Record<string, string>>({});
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
 
   const { data: job } = useRegenJob(jobId);
 
@@ -67,51 +69,71 @@ export function AiRegenDialog({
     setStep('review');
   }, [step, job]);
 
-  /** Ключ выбранных фото — анализ гоняется один раз на набор. */
-  const selectionKey = useMemo(
-    () => [...selectedIds].sort().join(','),
-    [selectedIds],
-  );
+  const selectionKey = useMemo(() => [...selectedIds].sort().join(','), [selectedIds]);
 
   const analyzeMutation = useMutation({
-    mutationFn: () =>
-      regenApi.analyze({
-        productId,
-        imageIds: [...selectedIds].slice(0, 3),
-      }),
-    onSuccess: (result: GarmentAnalysis) => {
-      setAnalysis(result);
-      setAnalysisKey(selectionKey);
-      // Готовая сцена под эту вещь — подставляем, если админ ещё ничего не писал
-      if (!prompt.trim() && result.scenes[0]?.prompt) {
-        setPrompt(result.scenes[0].prompt);
-      }
+    mutationFn: (imageId: string) =>
+      regenApi.analyze({ productId, imageIds: [imageId] }),
+    onSuccess: (result: GarmentAnalysis, imageId: string) => {
+      setAnalyses((prev) => ({ ...prev, [imageId]: result }));
+      // Готовая сцена под эту вещь — подставляем, если поле пустое
+      setPrompts((prev) =>
+        prev[imageId]?.trim() || !result.scenes[0]?.prompt
+          ? prev
+          : { ...prev, [imageId]: result.scenes[0].prompt },
+      );
     },
-    onError: () => {
-      // Анализ вспомогательный: не блокируем — промпт можно написать руками
-      toast.warning('Не удалось проанализировать фото', {
-        description: 'Напишите сцену вручную или повторите анализ',
+    onError: (error: unknown, imageId: string) => {
+      setAnalyses((prev) => ({ ...prev, [imageId]: null }));
+      const message =
+        (error as { response?: { data?: { message?: string[] | string } } })?.response
+          ?.data?.message;
+      toast.warning(`Не удалось проанализировать фото`, {
+        description: `Промпт можно написать вручную. ${
+          Array.isArray(message) ? message.join(', ') : message ?? ''
+        }`,
+      });
+    },
+    onSettled: (_d, _e, imageId: string) => {
+      setAnalyzingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(imageId);
+        return next;
       });
     },
   });
 
-  // Автозапуск анализа при входе в шаг промпта (один раз на набор фото)
+  const runAnalysis = (ids: string[]) => {
+    for (const id of ids) {
+      if (analyses[id] !== undefined || analyzingIds.has(id)) continue;
+      setAnalyzingIds((prev) => new Set(prev).add(id));
+      analyzeMutation.mutate(id);
+    }
+  };
+
+  // Автозапуск анализа КАЖДОГО выбранного фото при входе в шаг промптов
   useEffect(() => {
     if (step !== 'prompt' || !config?.enabled) return;
-    if (analysisKey === selectionKey) return;
-    if (analyzeMutation.isPending) return;
-    analyzeMutation.mutate();
+    runAnalysis([...selectedIds]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, selectionKey, config?.enabled]);
 
   const startMutation = useMutation({
-    mutationFn: () =>
-      regenApi.start({
+    mutationFn: () => {
+      const imagePrompts: Record<string, string> = {};
+      for (const id of selectedIds) {
+        const p = prompts[id]?.trim();
+        if (p) imagePrompts[id] = p;
+      }
+      const fallback = Object.values(imagePrompts)[0] ?? 'сцена по умолчанию для фото';
+      return regenApi.start({
         productId,
         imageIds: [...selectedIds],
-        prompt,
+        prompt: fallback,
+        imagePrompts,
         variantsPerImage,
-      }),
+      });
+    },
     onSuccess: (created: RegenJob) => {
       setJobId(created.id);
       setStep('progress');
@@ -135,8 +157,36 @@ export function AiRegenDialog({
     });
   };
 
-  const applyPreset = (presetPrompt: string) => {
-    setPrompt((prev) => (prev ? `${prev}\n${presetPrompt}` : presetPrompt));
+  /** Пресет магазина — базовая сцена во ВСЕ поля (потом каждый правится под себя). */
+  const applyPresetToAll = (presetPrompt: string) => {
+    setPrompts((prev) => {
+      const next = { ...prev };
+      for (const id of selectedIds) next[id] = presetPrompt;
+      return next;
+    });
+  };
+
+  const applySceneToAll = (scenePrompt: string) => {
+    setPrompts((prev) => {
+      const next = { ...prev };
+      for (const id of selectedIds) next[id] = scenePrompt;
+      return next;
+    });
+    toast.info('Сцена применена ко всем фото — поправь каждое индивидуально');
+  };
+
+  const handleStart = () => {
+    const short: number[] = [];
+    orderedSelected.forEach((img, i) => {
+      if ((prompts[img.id]?.trim().length ?? 0) < MIN_PROMPT) short.push(i + 1);
+    });
+    if (short.length > 0) {
+      toast.error(`Промпт слишком короткий (минимум ${MIN_PROMPT} симв.)`, {
+        description: `Фото: ${short.join(', ')}`,
+      });
+      return;
+    }
+    startMutation.mutate();
   };
 
   const replacements = useMemo<RegenReplacement[]>(() => {
@@ -166,23 +216,21 @@ export function AiRegenDialog({
   const resetAndClose = () => {
     setStep('select');
     setSelectedIds(new Set());
-    setPrompt('');
     setVariantsPerImage(1);
     setJobId(null);
     setChosenVariant({});
     setAccepted({});
-    setAnalysis(null);
-    setAnalysisKey(null);
+    setAnalyses({});
+    setPrompts({});
+    setAnalyzingIds(new Set());
     onClose();
   };
 
-  const handleStart = () => {
-    if (prompt.trim().length < 10) {
-      toast.error('Промпт слишком короткий (минимум 10 символов)');
-      return;
-    }
-    startMutation.mutate();
-  };
+  /** Выбранные фото в порядке галереи. */
+  const orderedSelected = useMemo(
+    () => images.filter((img) => selectedIds.has(img.id)),
+    [images, selectedIds],
+  );
 
   return (
     <Modal
@@ -192,7 +240,7 @@ export function AiRegenDialog({
       description={
         config?.driver === 'stub'
           ? 'Сервер работает в режиме заглушки (stub) — фото будут плашками-заглушками'
-          : `Модель: ${config?.model || '—'} · результат в формате карточки 3:4`
+          : `Модель: ${config?.model || '—'} · у каждого фото свой анализ и своя сцена · результат 3:4`
       }
       className="max-w-3xl max-h-[90vh] overflow-y-auto"
     >
@@ -201,7 +249,7 @@ export function AiRegenDialog({
         {(
           [
             ['select', 'Фото'],
-            ['prompt', 'Промпт'],
+            ['prompt', 'Промпты'],
             ['progress', 'Генерация'],
             ['review', 'Ревью'],
           ] as Array<[Step, string]>
@@ -237,7 +285,7 @@ export function AiRegenDialog({
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
             Отметьте фото, которые нужно перегенерировать ({selectedIds.size} из{' '}
-            {images.length})
+            {images.length}) — у каждого будет свой анализ и своя сцена
           </p>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {images.map((img, index) => {
@@ -282,120 +330,26 @@ export function AiRegenDialog({
               Отмена
             </Button>
             <Button disabled={selectedIds.size === 0} onClick={() => setStep('prompt')}>
-              Далее: промпт
+              Далее: анализ и промпты
             </Button>
           </div>
         </div>
       )}
 
-      {/* ===== Шаг 2: промпт ===== */}
+      {/* ===== Шаг 2: анализ и промпт КАЖДОГО фото ===== */}
       {step === 'prompt' && (
         <div className="space-y-4">
-          {/* Vision-анализ выбранных фото: что за вещь + сцены под концепцию */}
-          {analyzeMutation.isPending && (
-            <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-700">
-              <ScanEye className="h-5 w-5 animate-pulse text-primary-500" />
-              Анализирую выбранные фото: вещь, цвет, подходящие сцены…
-            </div>
-          )}
-          {analysis && (
-            <div className="rounded-lg border border-primary-200 bg-primary-50/60 p-4 dark:border-primary-800 dark:bg-primary-900/20">
-              <div className="flex items-start justify-between gap-2">
-                <p className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
-                  <ScanEye className="h-4 w-4 shrink-0 text-primary-600" />
-                  {analysis.garmentType}
-                </p>
-                <button
-                  type="button"
-                  aria-label="Повторить анализ"
-                  title="Повторить анализ фото"
-                  onClick={() => {
-                    setAnalysisKey(null);
-                    analyzeMutation.mutate();
-                  }}
-                  className="rounded-md p-1 text-gray-400 hover:bg-white/70 hover:text-gray-600 dark:hover:bg-gray-800"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
-                {analysis.subject && (
-                  <p>
-                    <span className="text-gray-400">Кто в кадре (сохранится):</span> {analysis.subject}
-                  </p>
-                )}
-                {analysis.color && (
-                  <p>
-                    <span className="text-gray-400">Цвет/принт:</span> {analysis.color}
-                  </p>
-                )}
-                {analysis.styleMood && (
-                  <p>
-                    <span className="text-gray-400">Настроение:</span> {analysis.styleMood}
-                  </p>
-                )}
-                {analysis.modelNote && (
-                  <p>
-                    <span className="text-gray-400">Модель:</span> {analysis.modelNote}
-                  </p>
-                )}
-                {analysis.notes && (
-                  <p className="sm:col-span-2">
-                    <span className="text-gray-400">Детали для генерации:</span> {analysis.notes}
-                  </p>
-                )}
-                {analysis.brandArtifacts && (
-                  <p className="sm:col-span-2 rounded-md bg-amber-50 px-2 py-1 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                    <span className="font-medium">Бренды на фото (удалятся при генерации):</span>{' '}
-                    {analysis.brandArtifacts}
-                  </p>
-                )}
-                {analysis.infoText && (
-                  <p className="sm:col-span-2 rounded-md bg-emerald-50 px-2 py-1 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                    <span className="font-medium">Текст на фото (сохранится как есть):</span>{' '}
-                    {analysis.infoText}
-                  </p>
-                )}
-              </div>
-              {analysis.scenes.length > 0 && (
-                <div className="mt-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-primary-700 dark:text-primary-300">
-                    Подобрано по фото и концепции магазина
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {analysis.scenes.map((scene) => (
-                      <button
-                        key={scene.title + scene.prompt.slice(0, 24)}
-                        type="button"
-                        onClick={() => setPrompt(scene.prompt)}
-                        className="rounded-full border border-primary-300 bg-white px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-700 dark:bg-gray-800 dark:text-primary-300 dark:hover:bg-gray-700"
-                      >
-                        <Sparkles className="mr-1 inline h-3 w-3" />
-                        {scene.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          {step === 'prompt' && !analyzeMutation.isPending && !analysis && (
-            <p className="text-xs text-gray-400">
-              Автоанализ фото недоступен — напишите сцену вручную или нажмите «Сгенерировать»
-            </p>
-          )}
-
           {config && config.presets.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Пресеты сцен (добавляются к промпту)
+                Пресеты магазина (заполнят все поля — потом правь каждое под фото)
               </p>
               <div className="flex flex-wrap gap-2">
                 {config.presets.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
-                    onClick={() => applyPreset(preset.prompt)}
+                    onClick={() => applyPresetToAll(preset.prompt)}
                     className="rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-800 dark:bg-primary-900/30 dark:text-primary-300"
                   >
                     <Sparkles className="mr-1 inline h-3 w-3" />
@@ -406,27 +360,131 @@ export function AiRegenDialog({
             </div>
           )}
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Что должно быть на фото (сцена)
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              aria-label="Промпт сцены"
-              rows={5}
-              placeholder="Например: девушка в этой пижаме пьёт травяной чай перед сном в уютной спальне, тёплый свет лампы…"
-              className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-primary-500 focus:outline-none dark:border-gray-600"
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              {prompt.trim().length} / 4000 символов · минимум 10
-            </p>
-          </div>
+          {orderedSelected.map((img, index) => {
+            const analysis = analyses[img.id];
+            const analyzing = analyzingIds.has(img.id);
+            const value = prompts[img.id] ?? '';
+            return (
+              <div
+                key={img.id}
+                className="space-y-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={img.url}
+                    alt={img.alt || `Фото ${index + 1}`}
+                    className="h-16 w-12 shrink-0 rounded-md border border-gray-200 object-cover dark:border-gray-700"
+                  />
+                  <div className="min-w-0 flex-1">
+                    {analyzing ? (
+                      <p className="flex items-center gap-2 text-sm text-gray-500">
+                        <ScanEye className="h-4 w-4 animate-pulse text-primary-500" />
+                        Анализирую фото {index + 1}: вещь, кто в кадре, сцены…
+                      </p>
+                    ) : analysis ? (
+                      <>
+                        <p className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                          <ScanEye className="h-4 w-4 shrink-0 text-primary-600" />
+                          {analysis.garmentType}
+                          <button
+                            type="button"
+                            aria-label={`Повторить анализ фото ${index + 1}`}
+                            title="Повторить анализ"
+                            onClick={() => {
+                              setAnalyses((prev) => {
+                                const next = { ...prev };
+                                delete next[img.id];
+                                return next;
+                              });
+                              runAnalysis([img.id]);
+                            }}
+                            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          </button>
+                        </p>
+                        <div className="mt-1 space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                          {analysis.subject && (
+                            <p>
+                              <span className="text-gray-400">Кто в кадре (сохранится):</span> {analysis.subject}
+                            </p>
+                          )}
+                          {analysis.brandArtifacts && (
+                            <p className="rounded bg-amber-50 px-2 py-0.5 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                              <span className="font-medium">Бренды (удалятся):</span> {analysis.brandArtifacts}
+                            </p>
+                          )}
+                          {analysis.infoText && (
+                            <p className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                              <span className="font-medium">Текст (сохранится):</span> {analysis.infoText}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-gray-400">
+                        Анализ недоступен — напишите сцену вручную
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {analysis && analysis.scenes.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {analysis.scenes.map((scene) => (
+                      <button
+                        key={scene.title + scene.prompt.slice(0, 24)}
+                        type="button"
+                        onClick={() =>
+                          setPrompts((prev) => ({ ...prev, [img.id]: scene.prompt }))
+                        }
+                        className="rounded-full border border-primary-300 bg-white px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:border-primary-700 dark:bg-gray-800 dark:text-primary-300 dark:hover:bg-gray-700"
+                      >
+                        <Sparkles className="mr-1 inline h-3 w-3" />
+                        {scene.title}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => applySceneToAll(value)}
+                      disabled={!value.trim()}
+                      className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40"
+                      title="Скопировать текущую сцену этого фото во все остальные"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      применить ко всем
+                    </button>
+                  </div>
+                )}
+
+                <div>
+                  <textarea
+                    value={value}
+                    onChange={(e) =>
+                      setPrompts((prev) => ({ ...prev, [img.id]: e.target.value }))
+                    }
+                    aria-label={`Промпт сцены — фото ${index + 1}`}
+                    rows={3}
+                    placeholder={`Сцена для фото ${index + 1}: например, девушка в этой пижаме пьёт чай перед сном…`}
+                    className="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm focus:border-primary-500 focus:outline-none dark:border-gray-600"
+                  />
+                  <p
+                    className={cn(
+                      'mt-1 text-right text-xs',
+                      value.trim().length < MIN_PROMPT ? 'text-red-400' : 'text-gray-400',
+                    )}
+                  >
+                    {value.trim().length} / 4000
+                  </p>
+                </div>
+              </div>
+            );
+          })}
 
           {config?.basePrompt && (
             <details className="rounded-lg border border-gray-200 p-3 text-sm dark:border-gray-700">
               <summary className="cursor-pointer text-gray-500">
-                Базовый промпт стиля магазина (добавится автоматически)
+                Базовый промпт стиля магазина (добавится автоматически к каждому фото)
               </summary>
               <p className="mt-2 whitespace-pre-wrap text-xs text-gray-500">
                 {config.basePrompt}
@@ -577,7 +635,7 @@ function ProgressView({ job }: { job: RegenJob | null }) {
           <p className="font-medium text-gray-900 dark:text-white">
             {!job && 'Постановка в очередь...'}
             {job?.status === 'pending' && 'Ожидание обработки...'}
-            {job?.status === 'processing' && 'Генерация фото...'}
+            {job?.status === 'processing' && 'Генерация фото (у каждого свой промпт)...'}
             {job?.status === 'completed' && 'Генерация завершена'}
             {job?.status === 'failed' && 'Генерация не удалась'}
           </p>
@@ -621,6 +679,11 @@ function ProgressView({ job }: { job: RegenJob | null }) {
                 <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
               )}
               <span className="truncate">{item.sourceUrl.split('/').pop()}</span>
+              {item.prompt && (
+                <span className="ml-auto max-w-[45%] truncate text-xs text-gray-400" title={item.prompt}>
+                  {item.prompt}
+                </span>
+              )}
             </li>
           ))}
         </ul>
