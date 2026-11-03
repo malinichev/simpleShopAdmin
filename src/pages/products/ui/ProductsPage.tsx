@@ -14,6 +14,7 @@ import { productsApi, productKeys } from '@/features/product-management';
 import { useCategoriesFlat } from '@/features/category-management';
 import { BulkActionsBar } from '@/features/bulk-actions';
 import { ExportButton } from '@/features/export-data';
+import { AiRegenDialog, type RegenTarget } from '@/features/ai-image-regen';
 import { ProductsTable } from '@/widgets/products-table';
 
 const statusOptions = [
@@ -26,6 +27,9 @@ export function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  // ИИ-проверка фото выбранных товаров (bulk)
+  const [aiTargets, setAiTargets] = useState<RegenTarget[] | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const debouncedSearch = useDebounce(search);
   const queryClient = useQueryClient();
@@ -40,6 +44,37 @@ export function ProductsPage() {
   );
 
   const selectedIds = useMemo(() => Object.keys(rowSelection), [rowSelection]);
+
+  /** Загрузить полные данные выбранных товаров и открыть bulk-диалог ИИ-фото. */
+  const handleAiCheck = async () => {
+    setAiLoading(true);
+    try {
+      const details = await Promise.all(selectedIds.map((id) => productsApi.getProduct(id)));
+      const targets: RegenTarget[] = details.map((p) => ({
+        productId: p.id,
+        productName: p.name,
+        images: (p.images ?? []).map((img, i) => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt ?? '',
+          isMain: (img.order ?? i) === 0,
+        })),
+      }));
+      const withPhotos = targets.filter((t) => t.images.length > 0);
+      if (withPhotos.length === 0) {
+        toast.info('У выбранных товаров нет фото');
+        return;
+      }
+      if (withPhotos.length < targets.length) {
+        toast.info(`Товаров без фото пропущено: ${targets.length - withPhotos.length}`);
+      }
+      setAiTargets(withPhotos);
+    } catch {
+      toast.error('Не удалось загрузить выбранные товары');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const bulkDeleteMutation = useMutation({
     mutationFn: (ids: string[]) => productsApi.bulkDelete(ids),
@@ -130,6 +165,8 @@ export function ProductsPage() {
         onDelete={() => bulkDeleteMutation.mutate(selectedIds)}
         onStatusChange={(status) => bulkStatusMutation.mutate({ ids: selectedIds, status })}
         deleteLoading={bulkDeleteMutation.isPending}
+        onAiCheck={handleAiCheck}
+        aiCheckLoading={aiLoading}
       />
 
        {/*Table */}
@@ -140,6 +177,17 @@ export function ProductsPage() {
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
       />
+
+      {/* ИИ-проверка/регенерация фото выбранных товаров */}
+      {aiTargets && aiTargets.length > 0 && (
+        <AiRegenDialog
+          open
+          onClose={() => setAiTargets(null)}
+          targets={aiTargets}
+          bulkMode
+          onDone={() => queryClient.invalidateQueries({ queryKey: productKeys.lists() })}
+        />
+      )}
     </div>
   );
 }

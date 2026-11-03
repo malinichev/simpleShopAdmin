@@ -79,6 +79,15 @@ export const productsApi = {
     return data;
   },
 
+  /** Точечное обновление только картинок (bulk-применение ИИ-результатов). */
+  updateImages: async (
+    id: string,
+    images: Array<{ id: string; url: string; alt: string; order: number }>,
+  ): Promise<Product> => {
+    const { data } = await api.patch<Product>(`/products/${id}`, { images });
+    return data;
+  },
+
   deleteProduct: async (id: string): Promise<void> => {
     await api.delete(`/products/${id}`);
   },
