@@ -277,16 +277,28 @@ export function AiRegenDialog({
     [photos, selectedKeys],
   );
 
-  /** Bulk: проанализированные фото БЕЗ брендов — исключены из генерации. */
-  const skippedClean = useMemo(
-    () =>
-      bulkMode
-        ? photos.filter(
-            (p) => analyses[p.key] && !brandFound(analyses[p.key]) && !selectedKeys.has(p.key),
-          )
-        : [],
-    [bulkMode, photos, analyses, selectedKeys],
+  /** Фото вне генерации на шаге промптов: чистые (без брендов), пропущенные
+   *  вручную или с неудавшимся анализом. Клик по превью возвращает. */
+  const skippedPhotos = useMemo(
+    () => photos.filter((p) => !selectedKeys.has(p.key)),
+    [photos, selectedKeys],
   );
+
+  const skipReason = (p: FlatPhoto): string => {
+    const a = analyses[p.key];
+    if (a === null) return 'анализ не удался';
+    if (a && !brandFound(a)) return 'без брендов';
+    return 'пропущено вручную';
+  };
+
+  const skipPhoto = (key: string) => {
+    setSelectedKeys((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  };
 
   const stillAnalyzing = useMemo(
     () => photos.some((p) => analyzingKeys.has(p.key) || analyses[p.key] === undefined),
@@ -524,23 +536,24 @@ export function AiRegenDialog({
       {/* ===== Шаг 2: анализ и промпт КАЖДОГО фото ===== */}
       {step === 'prompt' && (
         <div className="space-y-4">
-          {/* Bulk: чистые фото без брендов исключены из генерации */}
-          {skippedClean.length > 0 && (
+          {/* Фото вне генерации: чистые (без брендов), пропущенные вручную,
+              с неудавшимся анализом — клик по превью возвращает */}
+          {skippedPhotos.length > 0 && (
             <details className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800/60">
               <summary className="cursor-pointer text-gray-500">
-                Пропущено: чистые фото без брендов — {skippedClean.length} шт.
-                (регенерация не требуется; клик по фото вернёт его)
+                Пропущено: {skippedPhotos.length} фото — не будут генерироваться
+                (клик по фото вернёт его)
               </summary>
               <div className="mt-3 flex flex-wrap gap-2">
-                {skippedClean.map((photo) => (
+                {skippedPhotos.map((photo) => (
                   <button
                     key={photo.key}
                     type="button"
-                    title={`${photo.productName}: вернуть в генерацию`}
+                    title={`${photo.productName}: ${skipReason(photo)} — вернуть в генерацию`}
                     onClick={() => toggleSelect(photo.key)}
                     className="overflow-hidden rounded-md border-2 border-dashed border-gray-300 opacity-60 transition-opacity hover:opacity-100 dark:border-gray-600"
                   >
-                    <img src={photo.url} alt="Чистое фото" className="h-16 w-12 object-cover" />
+                    <img src={photo.url} alt="Пропущенное фото" className="h-16 w-12 object-cover" />
                   </button>
                 ))}
               </div>
@@ -600,6 +613,7 @@ export function AiRegenDialog({
                     onValueChange={(v) => setPrompts((prev) => ({ ...prev, [photo.key]: v }))}
                     onScene={(v) => setPrompts((prev) => ({ ...prev, [photo.key]: v }))}
                     onApplyToAll={applySceneToAll}
+                    onSkip={() => skipPhoto(photo.key)}
                     onReanalyze={() => {
                       setAnalyses((prev) => {
                         const next = { ...prev };
@@ -857,6 +871,8 @@ interface PhotoPromptCardProps {
   onValueChange: (v: string) => void;
   onScene: (v: string) => void;
   onApplyToAll: (v: string) => void;
+  /** Убрать фото из генерации (в секцию «Пропущено»). */
+  onSkip: () => void;
   onReanalyze: () => void;
 }
 
@@ -869,6 +885,7 @@ function PhotoPromptCard({
   onValueChange,
   onScene,
   onApplyToAll,
+  onSkip,
   onReanalyze,
 }: PhotoPromptCardProps) {
   return (
@@ -899,6 +916,15 @@ function PhotoPromptCard({
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                 </button>
+                <button
+                  type="button"
+                  aria-label={`Пропустить фото ${index}`}
+                  title="Пропустить — не генерировать"
+                  onClick={onSkip}
+                  className="ml-auto rounded-md px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                >
+                  Пропустить
+                </button>
               </p>
               <div className="mt-1 space-y-1 text-xs text-gray-600 dark:text-gray-300">
                 {analysis.subject && (
@@ -919,7 +945,25 @@ function PhotoPromptCard({
               </div>
             </>
           ) : (
-            <p className="text-xs text-gray-400">Анализ недоступен — напишите сцену вручную</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs text-gray-400">
+                Анализ недоступен (сбой/отмена) — напишите сцену вручную или повторите
+              </p>
+              <button
+                type="button"
+                onClick={onReanalyze}
+                className="rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Повторить анализ
+              </button>
+              <button
+                type="button"
+                onClick={onSkip}
+                className="rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-400 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-500 dark:border-gray-600 dark:hover:bg-red-900/20"
+              >
+                Пропустить
+              </button>
+            </div>
           )}
         </div>
       </div>
