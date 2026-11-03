@@ -51,6 +51,8 @@ export interface GarmentAnalysis {
   styleMood: string;
   modelNote: string;
   notes: string;
+  /** Найденные логотипы/названия брендов/сайты/водяные знаки — удаляются при генерации. */
+  brandArtifacts: string;
   scenes: RegenPromptPreset[];
 }
 

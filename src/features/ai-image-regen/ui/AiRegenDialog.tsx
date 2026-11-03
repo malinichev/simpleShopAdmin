@@ -339,6 +339,12 @@ export function AiRegenDialog({
                     <span className="text-gray-400">Детали для генерации:</span> {analysis.notes}
                   </p>
                 )}
+                {analysis.brandArtifacts && (
+                  <p className="sm:col-span-2 rounded-md bg-amber-50 px-2 py-1 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                    <span className="font-medium">Бренды на фото (удалятся при генерации):</span>{' '}
+                    {analysis.brandArtifacts}
+                  </p>
+                )}
               </div>
               {analysis.scenes.length > 0 && (
                 <div className="mt-3">
