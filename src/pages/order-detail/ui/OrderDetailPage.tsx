@@ -16,8 +16,10 @@ import {
   useOrder,
   useUpdateOrderStatus,
   useUpdateAdminNote,
+  useOrderAudit,
   OrderStatusBadge,
   OrderTimeline,
+  AuditTimeline,
   ChangeStatusModal,
   useUsers,
 } from '@/features/order-management';
@@ -35,6 +37,7 @@ const paymentVariantMap: Record<
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading } = useOrder(id!);
+  const audit = useOrderAudit(id!);
   const { data: userData, isLoading: isLoadingUser } = useUsers(order?.userId);
   const updateStatus = useUpdateOrderStatus();
   const updateNote = useUpdateAdminNote();
@@ -353,6 +356,19 @@ export function OrderDetailPage() {
         </CardHeader>
         <CardContent>
           <OrderTimeline events={order.history} />
+        </CardContent>
+      </Card>
+
+      {/* Audit log: кто/когда/что менял (включая платежи и систему) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Журнал событий</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AuditTimeline
+            entries={audit.data?.data}
+            isLoading={audit.isLoading}
+          />
         </CardContent>
       </Card>
 
