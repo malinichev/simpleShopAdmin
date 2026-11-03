@@ -1,4 +1,6 @@
 export { productsApi } from './api/productsApi';
+export { stockSyncApi, type StockSyncRun } from './api/stockSyncApi';
+export { StockSyncButton } from './ui/StockSyncButton';
 export { productKeys } from './api/queries';
 export { useProducts } from './model/useProducts';
 export { useProduct } from './model/useProduct';

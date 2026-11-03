@@ -10,7 +10,7 @@ import { Select } from '@/shared/ui/select';
 import { ROUTES } from '@/shared/config';
 import { productStatuses, type ProductStatus } from '@/shared/constants';
 import { useDebounce } from '@/shared/lib/hooks/useDebounce';
-import { productsApi, productKeys } from '@/features/product-management';
+import { productsApi, productKeys, StockSyncButton } from '@/features/product-management';
 import { useCategoriesFlat } from '@/features/category-management';
 import { BulkActionsBar } from '@/features/bulk-actions';
 import { ExportButton } from '@/features/export-data';
@@ -116,6 +116,7 @@ export function ProductsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <StockSyncButton />
           <Button variant="outline" asChild>
             <Link to={ROUTES.IMPORT_PRODUCTS}>
               <Upload className="h-4 w-4" />
