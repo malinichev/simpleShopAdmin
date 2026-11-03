@@ -47,6 +47,8 @@ export interface RegenConfig {
 /** Vision-анализ выбранных фото перед генерацией. */
 export interface GarmentAnalysis {
   garmentType: string;
+  /** Кто в кадре исходника (женщина/мужчина/часть тела/вещь без человека) — сохраняется в генерации. */
+  subject: string;
   color: string;
   styleMood: string;
   modelNote: string;

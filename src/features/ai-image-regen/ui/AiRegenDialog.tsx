@@ -319,6 +319,11 @@ export function AiRegenDialog({
                 </button>
               </div>
               <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-sm text-gray-600 sm:grid-cols-2 dark:text-gray-300">
+                {analysis.subject && (
+                  <p>
+                    <span className="text-gray-400">Кто в кадре (сохранится):</span> {analysis.subject}
+                  </p>
+                )}
                 {analysis.color && (
                   <p>
                     <span className="text-gray-400">Цвет/принт:</span> {analysis.color}
