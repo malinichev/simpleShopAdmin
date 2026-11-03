@@ -6,6 +6,8 @@ export { useOrder } from './model/useOrder';
 export { useUpdateOrderStatus } from './model/useUpdateOrderStatus';
 export { useUpdateAdminNote } from './model/useUpdateAdminNote';
 export { useOrderMarkingCodes } from './model/useOrderMarkingCodes';
+export { useOrderAudit } from './model/useOrderAudit';
 export { OrderStatusBadge } from './ui/OrderStatusBadge';
 export { OrderTimeline } from './ui/OrderTimeline';
+export { AuditTimeline } from './ui/AuditTimeline';
 export { ChangeStatusModal } from './ui/ChangeStatusModal';
