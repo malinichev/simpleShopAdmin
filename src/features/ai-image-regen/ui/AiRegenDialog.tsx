@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Sparkles, CheckCircle, XCircle, Loader2, AlertTriangle, Wand2, ScanEye, RefreshCw, Copy } from 'lucide-react';
+import { Sparkles, CheckCircle, XCircle, Loader2, AlertTriangle, Wand2, ScanEye, RefreshCw, Copy, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '@/shared/ui/modal';
 import { Button } from '@/shared/ui/button';
@@ -49,6 +49,8 @@ export function AiRegenDialog({
   const [analyses, setAnalyses] = useState<Record<string, GarmentAnalysis | null>>({});
   const [prompts, setPrompts] = useState<Record<string, string>>({});
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
+  // Разворот результата ревью на весь экран (lightbox «до/после»)
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   const { data: job } = useRegenJob(jobId);
 
@@ -223,6 +225,7 @@ export function AiRegenDialog({
     setAnalyses({});
     setPrompts({});
     setAnalyzingIds(new Set());
+    setExpandedItemId(null);
     onClose();
   };
 
@@ -231,6 +234,19 @@ export function AiRegenDialog({
     () => images.filter((img) => selectedIds.has(img.id)),
     [images, selectedIds],
   );
+
+  // Esc закрывает полноэкранный просмотр
+  useEffect(() => {
+    if (!expandedItemId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpandedItemId(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [expandedItemId]);
+
+  const expandedItem =
+    job?.items.find((i) => i.sourceImageId === expandedItemId) ?? null;
 
   return (
     <Modal
@@ -551,7 +567,20 @@ export function AiRegenDialog({
                   key={item.sourceImageId}
                   className="grid grid-cols-1 gap-4 rounded-lg border border-gray-200 p-3 sm:grid-cols-[minmax(0,240px)_1fr] dark:border-gray-700"
                 >
-                  <BeforeAfter before={item.sourceUrl} after={variant?.url ?? item.sourceUrl} />
+                  <div className="relative">
+                    <BeforeAfter before={item.sourceUrl} after={variant?.url ?? item.sourceUrl} />
+                    {item.variants.length > 0 && (
+                      <button
+                        type="button"
+                        aria-label="Развернуть на весь экран"
+                        title="Развернуть на весь экран"
+                        onClick={() => setExpandedItemId(item.sourceImageId)}
+                        className="absolute bottom-3 right-3 z-20 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
+                      >
+                        <Maximize2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {item.variants.length > 1 && (
                       <div className="flex gap-2">
@@ -613,6 +642,66 @@ export function AiRegenDialog({
           </div>
         </div>
       )}
+
+      {/* ===== Полноэкранный просмотр «до/после» ===== */}
+      {expandedItem && (
+        <div
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/90 p-4"
+          onClick={() => setExpandedItemId(null)}
+        >
+          <button
+            type="button"
+            aria-label="Закрыть просмотр"
+            onClick={() => setExpandedItemId(null)}
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25"
+          >
+            <XCircle className="h-6 w-6" />
+          </button>
+          <div
+            className="flex max-h-full flex-col items-center gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 3:4: ширина ограничена высотой (75vh) и шириной экрана */}
+            <div className="w-[min(92vw,calc(72vh*0.75))]">
+              <BeforeAfter
+                before={expandedItem.sourceUrl}
+                after={
+                  expandedItem.variants[chosenVariant[expandedItem.sourceImageId] ?? 0]?.url ??
+                  expandedItem.sourceUrl
+                }
+                className="max-h-[72vh]"
+              />
+            </div>
+            {expandedItem.variants.length > 1 && (
+              <div className="flex gap-2">
+                {expandedItem.variants.map((v, i) => (
+                  <button
+                    key={v.url}
+                    type="button"
+                    onClick={() =>
+                      setChosenVariant((prev) => ({
+                        ...prev,
+                        [expandedItem.sourceImageId]: i,
+                      }))
+                    }
+                    className={cn(
+                      'overflow-hidden rounded-md border-2 transition-colors',
+                      i === (chosenVariant[expandedItem.sourceImageId] ?? 0)
+                        ? 'border-white'
+                        : 'border-white/30 hover:border-white/60',
+                    )}
+                  >
+                    <img src={v.thumbUrl} alt={`Вариант ${i + 1}`} className="h-20 w-15 object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-white/60">
+              Ползунок «до/после» работает · Esc или клик по фону — закрыть
+            </p>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }
@@ -668,24 +757,55 @@ function ProgressView({ job }: { job: RegenJob | null }) {
       </div>
 
       {job && job.items.length > 0 && (
-        <ul className="space-y-1 text-sm">
-          {job.items.map((item) => (
-            <li key={item.sourceImageId} className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-              {item.variants.length > 0 ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : item.error ? (
-                <XCircle className="h-4 w-4 text-red-500" />
-              ) : (
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              )}
-              <span className="truncate">{item.sourceUrl.split('/').pop()}</span>
-              {item.prompt && (
-                <span className="ml-auto max-w-[45%] truncate text-xs text-gray-400" title={item.prompt}>
-                  {item.prompt}
-                </span>
-              )}
-            </li>
-          ))}
+        <ul className="space-y-2 text-sm">
+          {job.items.map((item) => {
+            const ready = item.variants[0];
+            return (
+              <li
+                key={item.sourceImageId}
+                className="flex items-center gap-3 rounded-md border border-gray-100 p-2 dark:border-gray-800"
+              >
+                {ready ? (
+                  <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+                ) : item.error ? (
+                  <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+                ) : (
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-gray-400" />
+                )}
+                {/* исходник → результат, как только готов */}
+                <img
+                  src={item.sourceUrl}
+                  alt="Исходник"
+                  className="h-12 w-9 shrink-0 rounded border border-gray-200 object-cover dark:border-gray-700"
+                />
+                {ready ? (
+                  <img
+                    src={ready.thumbUrl}
+                    alt="Сгенерировано"
+                    className="h-12 w-9 shrink-0 rounded border border-green-300 object-cover dark:border-green-800"
+                  />
+                ) : (
+                  <div className="h-12 w-9 shrink-0 rounded border border-dashed border-gray-300 dark:border-gray-600" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-gray-600 dark:text-gray-300" title={item.sourceUrl}>
+                    {item.sourceUrl.split('/').pop()}
+                  </p>
+                  {item.error ? (
+                    <p className="truncate text-xs text-red-500" title={item.error}>
+                      {item.error}
+                    </p>
+                  ) : (
+                    item.prompt && (
+                      <p className="truncate text-xs text-gray-400" title={item.prompt}>
+                        {item.prompt}
+                      </p>
+                    )
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
