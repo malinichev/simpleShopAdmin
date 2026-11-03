@@ -46,6 +46,10 @@ type Step = 'select' | 'prompt' | 'progress' | 'review';
 
 const MIN_PROMPT = 10;
 
+/** Брендовые артефакты найдены (для bulk-фильтра чистых фото). */
+const brandFound = (a?: GarmentAnalysis | null): boolean =>
+  !!a?.brandArtifacts?.trim();
+
 /** Плоский список фото с составным ключом productId::imageId (id фото уникальны лишь внутри товара). */
 interface FlatPhoto {
   key: string;
@@ -152,6 +156,16 @@ export function AiRegenDialog({
           ? prev
           : { ...prev, [key]: result.scenes[0].prompt },
       );
+      // Bulk-режим: фото БЕЗ брендовых артефактов в генерации не нужны —
+      // автоматически исключаем (чистые попадают в секцию «Пропущено»)
+      if (bulkMode && !brandFound(result)) {
+        setSelectedKeys((prev) => {
+          if (!prev.has(key)) return prev;
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }
     },
     onError: (error: unknown, key: string) => {
       setAnalyses((prev) => ({ ...prev, [key]: null }));
@@ -261,6 +275,22 @@ export function AiRegenDialog({
   const orderedSelected = useMemo(
     () => photos.filter((p) => selectedKeys.has(p.key)),
     [photos, selectedKeys],
+  );
+
+  /** Bulk: проанализированные фото БЕЗ брендов — исключены из генерации. */
+  const skippedClean = useMemo(
+    () =>
+      bulkMode
+        ? photos.filter(
+            (p) => analyses[p.key] && !brandFound(analyses[p.key]) && !selectedKeys.has(p.key),
+          )
+        : [],
+    [bulkMode, photos, analyses, selectedKeys],
+  );
+
+  const stillAnalyzing = useMemo(
+    () => photos.some((p) => analyzingKeys.has(p.key) || analyses[p.key] === undefined),
+    [photos, analyzingKeys, analyses],
   );
 
   const handleStart = () => {
@@ -494,6 +524,37 @@ export function AiRegenDialog({
       {/* ===== Шаг 2: анализ и промпт КАЖДОГО фото ===== */}
       {step === 'prompt' && (
         <div className="space-y-4">
+          {/* Bulk: чистые фото без брендов исключены из генерации */}
+          {skippedClean.length > 0 && (
+            <details className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800/60">
+              <summary className="cursor-pointer text-gray-500">
+                Пропущено: чистые фото без брендов — {skippedClean.length} шт.
+                (регенерация не требуется; клик по фото вернёт его)
+              </summary>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {skippedClean.map((photo) => (
+                  <button
+                    key={photo.key}
+                    type="button"
+                    title={`${photo.productName}: вернуть в генерацию`}
+                    onClick={() => toggleSelect(photo.key)}
+                    className="overflow-hidden rounded-md border-2 border-dashed border-gray-300 opacity-60 transition-opacity hover:opacity-100 dark:border-gray-600"
+                  >
+                    <img src={photo.url} alt="Чистое фото" className="h-16 w-12 object-cover" />
+                  </button>
+                ))}
+              </div>
+            </details>
+          )}
+
+          {/* Bulk: всё проанализировано и всё чисто */}
+          {bulkMode && !stillAnalyzing && selectedKeys.size === 0 && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+              Брендовых логотипов и названий на выбранных фото не найдено —
+              генерация не требуется.
+            </div>
+          )}
+
           {config && config.presets.length > 0 && (
             <div>
               <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -590,7 +651,11 @@ export function AiRegenDialog({
                 Назад
               </Button>
             )}
-            <Button loading={startMutation.isPending} onClick={handleStart}>
+            <Button
+              loading={startMutation.isPending}
+              disabled={selectedKeys.size === 0}
+              onClick={handleStart}
+            >
               <Wand2 className="h-4 w-4" />
               Сгенерировать ({selectedKeys.size} фото{bulkMode ? `, ${targets.length} товаров` : ''})
             </Button>
