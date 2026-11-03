@@ -187,22 +187,29 @@ export function AiRegenDialog({
     },
   });
 
-  const runAnalysis = (keys: string[]) => {
-    for (const key of keys) {
-      if (analyses[key] !== undefined || analyzingKeys.has(key)) continue;
-      setAnalyzingKeys((prev) => new Set(prev).add(key));
-      analyzeMutation.mutate(key);
+  /** Анализ порциями по 3 параллельно: bulk со многими товарами не долбит
+   *  API пучком и не ловит 429. */
+  const runAnalysis = async (keys: string[]) => {
+    const queue = keys.filter((k) => analyses[k] === undefined && !analyzingKeys.has(k));
+    const CHUNK = 3;
+    for (let i = 0; i < queue.length; i += CHUNK) {
+      const chunk = queue.slice(i, i + CHUNK);
+      setAnalyzingKeys((prev) => new Set([...prev, ...chunk]));
+      await Promise.allSettled(
+        chunk.map((key) => analyzeMutation.mutateAsync(key).catch(() => undefined)),
+      );
     }
   };
 
   // Автозапуск анализа КАЖДОГО выбранного фото при входе в шаг промптов
   useEffect(() => {
     if (step !== 'prompt' || !config?.enabled) return;
-    runAnalysis([...selectedKeys]);
+    void runAnalysis([...selectedKeys]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, selectionKey, config?.enabled]);
 
-  // Один job на товар (imageIds этого товара), последовательно
+  // Один job на товар (imageIds этого товара), последовательно;
+  // 429 (троттлер) — ретрай с паузой
   const startMutation = useMutation({
     mutationFn: async () => {
       const byProduct = new Map<string, string[]>();
@@ -212,6 +219,20 @@ export function AiRegenDialog({
         list.push(photo.imageId);
         byProduct.set(photo.productId, list);
       }
+      const startWithRetry = async (params: Parameters<typeof regenApi.start>[0]) => {
+        for (let attempt = 1; ; attempt++) {
+          try {
+            return await regenApi.start(params);
+          } catch (e) {
+            const status = (e as { response?: { status?: number } })?.response?.status;
+            if (status === 429 && attempt < 3) {
+              await new Promise((r) => setTimeout(r, 5000 * attempt));
+              continue;
+            }
+            throw e;
+          }
+        }
+      };
       const created: string[] = [];
       for (const [productId, imageIds] of byProduct) {
         const imagePrompts: Record<string, string> = {};
@@ -220,7 +241,7 @@ export function AiRegenDialog({
           if (p) imagePrompts[imageId] = p;
         }
         const fallback = Object.values(imagePrompts)[0] ?? 'сцена по умолчанию для фото';
-        const job = await regenApi.start({
+        const job = await startWithRetry({
           productId,
           imageIds,
           prompt: fallback,
@@ -228,6 +249,7 @@ export function AiRegenDialog({
           variantsPerImage,
         });
         created.push(job.id);
+        await new Promise((r) => setTimeout(r, 300));
       }
       return created;
     },
