@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
-import { Link2, Link2Off } from 'lucide-react';
+import { Link2, Link2Off, Plus } from 'lucide-react';
 import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 import { Select } from '@/shared/ui/select';
+import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { productsApi } from '@/features/product-management';
 import type { ProductFormData } from '@/features/product-management';
@@ -141,12 +142,75 @@ export function BasicInfoSection() {
                 />
               </div>
             </div>
-            <Input
-              label="Model ID"
-              {...register('modelId')}
-              error={errors.modelId?.message}
-              placeholder="UUID для связки цветов"
-            />
+            {/* Пикер модели (связка цветов) вместо ручного UUID (план п.5) */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">
+                Модель (связка цветов)
+              </label>
+              <Controller
+                name="modelId"
+                render={({ field }) => {
+                  const { data: models } = useQuery({
+                    queryKey: ['product-models'],
+                    queryFn: () => productsApi.getModels(),
+                    staleTime: 30_000,
+                  });
+                  const selectedModel = models?.find((m) => m.modelId === field.value);
+
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={field.value ?? ''}
+                          onChange={(v) => field.onChange(v || undefined)}
+                          options={[
+                            { value: '', label: '— без модели —' },
+                            ...(models ?? []).map((m) => ({
+                              value: m.modelId,
+                              label: `${m.name} × ${m.products.length} цветов`,
+                            })),
+                          ]}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            field.onChange(crypto.randomUUID())
+                          }
+                          title="Создать новую модель (связку)"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Новая
+                        </Button>
+                      </div>
+                      {selectedModel && selectedModel.products.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {selectedModel.products.map((p) => (
+                            <span
+                              key={p.id}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-2.5 py-1 text-xs"
+                            >
+                              {p.colorHex && (
+                                <span
+                                  className="w-3 h-3 rounded-full border border-gray-300"
+                                  style={{ background: p.colorHex }}
+                                />
+                              )}
+                              {p.color ?? p.name.slice(0, 20)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+              {errors.modelId?.message && (
+                <p className="text-sm text-red-500 mt-1">{errors.modelId.message}</p>
+              )}
+            </div>
           </div>
 
           <Input
