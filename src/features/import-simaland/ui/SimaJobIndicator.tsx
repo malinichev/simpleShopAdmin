@@ -3,12 +3,18 @@ import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSimaJob, useActiveSimaJob } from '../model/hooks';
+import {
+  SIMA_PHASES,
+  simaPhaseIndex,
+  simaOverallPercent,
+} from '../lib/progress';
 import { ROUTES } from '@/shared/config';
 
 /**
  * Индикатор фоновой загрузки с Сималенда для шапки админки: появляется, пока
  * задача выполняется (поллинг 5с), ведёт на страницу прогресса. Монтируется
  * глобально — финальный toast приходит даже если пользователь ушёл со страницы.
+ * Процент — общий по трём фазам (как на экране прогресса), не только по товарам.
  */
 export function SimaJobIndicator() {
   const { data: active } = useActiveSimaJob();
@@ -39,10 +45,11 @@ export function SimaJobIndicator() {
     return null;
   }
 
-  const percent =
-    job.totalItems > 0
-      ? Math.round((job.processedItems / job.totalItems) * 100)
-      : 0;
+  const percent = simaOverallPercent(job);
+  const phase =
+    job.status === 'pending'
+      ? 'старт'
+      : SIMA_PHASES[Math.min(simaPhaseIndex(job), SIMA_PHASES.length - 1)].short;
 
   return (
     <Link
@@ -51,8 +58,8 @@ export function SimaJobIndicator() {
       title="Перейти к прогрессу загрузки"
     >
       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      Загрузка с Сималенд
-      {job.totalItems > 0 && <span className="text-primary-500">{percent}%</span>}
+      Сималенд: {phase}
+      <span className="text-primary-500">{percent}%</span>
     </Link>
   );
 }

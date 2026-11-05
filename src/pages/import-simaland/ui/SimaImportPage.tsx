@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Info } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Switch } from '@/shared/ui/switch';import { ROUTES } from '@/shared/config';
+import { Switch } from '@/shared/ui/switch';
+import { ROUTES } from '@/shared/config';
 import { CsvUploader } from '@/features/import-products';
 import {
   SimaJobProgress,
@@ -11,6 +12,7 @@ import {
   useSimaPreview,
   useStartSimaImport,
   useSimaJob,
+  useActiveSimaJob,
   type SimaPreviewResult,
 } from '@/features/import-simaland';
 
@@ -31,7 +33,18 @@ export function SimaImportPage() {
 
   const previewMutation = useSimaPreview();
   const startMutation = useStartSimaImport();
-  const { data: activeJob } = useSimaJob(jobId);
+  const { data: selectedJob } = useSimaJob(jobId);
+  const { data: runningJob } = useActiveSimaJob();
+  // если пользователь приходит по клику на индикатор в шапке (или просто на
+  // страницу), а загрузка уже идёт — сразу показываем её прогресс
+  const activeJob = selectedJob ?? runningJob ?? null;
+
+  useEffect(() => {
+    if (runningJob && !jobId) {
+      setJobId(runningJob.id);
+      setStep('progress');
+    }
+  }, [runningJob, jobId]);
 
   const handleFileSelect = (file: File) => {
     previewMutation.mutate(file, {

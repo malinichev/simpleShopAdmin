@@ -11,49 +11,24 @@ import {
 import { Button } from '@/shared/ui/button';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { ROUTES } from '@/shared/config';
-import type { SimaJob, SimaJobPhase } from '../api/simaImportApi';
+import type { SimaJob } from '../api/simaImportApi';
 import { useCancelSimaImport } from '../model/hooks';
+import {
+  SIMA_PHASES,
+  simaPhaseIndex,
+  simaPhaseCounters,
+  simaOverallPercent,
+} from '../lib/progress';
 
 interface SimaJobProgressProps {
   job: SimaJob;
-}
-
-const PHASES: Array<{ key: SimaJobPhase; label: string }> = [
-  { key: 'scrape', label: 'Страницы Сималенда' },
-  { key: 'images', label: 'Картинки → S3' },
-  { key: 'products', label: 'Товары' },
-];
-
-function phaseIndex(job: SimaJob): number {
-  // done = все фазы завершены
-  if (job.phase === 'done') return PHASES.length;
-  return PHASES.findIndex((p) => p.key === job.phase);
-}
-
-/** Счётчики фазы: [done, total]. */
-function phaseCounters(job: SimaJob, key: SimaJobPhase): [number, number] {
-  if (key === 'scrape') return [job.scrapeDone, job.scrapeTotal];
-  if (key === 'images') return [job.imagesDone, job.imagesTotal];
-  return [job.processedItems, job.totalItems];
-}
-
-/** Общий %: фазы равным весом, незапущенные фазы по нулям. */
-function overallPercent(job: SimaJob): number {
-  const idx = phaseIndex(job);
-  let sum = 0;
-  PHASES.forEach((p, i) => {
-    const [done, total] = phaseCounters(job, p.key);
-    const frac = total > 0 ? done / total : i < idx ? 1 : 0;
-    sum += frac;
-  });
-  return Math.round((sum / PHASES.length) * 100);
 }
 
 /** ETA по скорости текущей фазы (startedAt → now / done × остаток). */
 function etaText(job: SimaJob): string {
   if (!job.startedAt || job.status !== 'processing') return '';
   const elapsedMs = Date.now() - new Date(job.startedAt).getTime();
-  const [done, total] = phaseCounters(job, job.phase);
+  const [done, total] = simaPhaseCounters(job, job.phase);
   if (job.phase === 'done' || done < 3 || total <= done) return '';
   const perItem = elapsedMs / done;
   const remainMs = perItem * (total - done);
@@ -67,8 +42,8 @@ export function SimaJobProgress({ job }: SimaJobProgressProps) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const cancelMutation = useCancelSimaImport();
   const isActive = job.status === 'pending' || job.status === 'processing';
-  const idx = phaseIndex(job);
-  const percent = overallPercent(job);
+  const idx = simaPhaseIndex(job);
+  const percent = simaOverallPercent(job);
   const eta = etaText(job);
 
   return (
@@ -90,7 +65,7 @@ export function SimaJobProgress({ job }: SimaJobProgressProps) {
             <p className="font-medium text-gray-900 dark:text-white">
               {job.status === 'pending' && 'Ожидание обработки…'}
               {job.status === 'processing' &&
-                `Фаза: ${PHASES[Math.min(idx, PHASES.length - 1)]?.label ?? '—'}`}
+                `Фаза: ${SIMA_PHASES[Math.min(idx, SIMA_PHASES.length - 1)]?.label ?? '—'}`}
               {job.status === 'completed' && 'Загрузка завершена'}
               {job.status === 'failed' && 'Загрузка не удалась'}
               {job.status === 'canceled' && 'Загрузка отменена'}
@@ -121,8 +96,8 @@ export function SimaJobProgress({ job }: SimaJobProgressProps) {
 
       {/* Фазы */}
       <div className="grid gap-2 sm:grid-cols-3">
-        {PHASES.map((p, i) => {
-          const [done, total] = phaseCounters(job, p.key);
+        {SIMA_PHASES.map((p, i) => {
+          const [done, total] = simaPhaseCounters(job, p.key);
           const current = i === idx && isActive;
           const passed = i < idx || !isActive;
           return (
