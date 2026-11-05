@@ -62,9 +62,11 @@ export function ProductsTable({
 
   const duplicateMutation = useMutation({
     mutationFn: (id: string) => productsApi.duplicateProduct(id),
-    onSuccess: () => {
+    onSuccess: (newProduct) => {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      toast.success('Товар дублирован');
+      toast.success('Черновик-копия создана: укажите цвет и фото');
+      // Переход на редактирование нового черновика
+      window.location.href = `/products/${newProduct.id}/edit`;
     },
     onError: () => {
       toast.error('Ошибка при дублировании');

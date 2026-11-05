@@ -14,6 +14,20 @@ interface PaginatedProducts {
   };
 }
 
+/** Модель (связка цветов) для пикера в форме товара */
+export interface ProductModel {
+  modelId: string;
+  name: string;
+  products: Array<{
+    id: string;
+    name: string;
+    color?: string;
+    colorHex?: string;
+    image?: string;
+    status: string;
+  }>;
+}
+
 function toApiPayload(formData: ProductFormData) {
   return {
     name: formData.name,
@@ -94,6 +108,13 @@ export const productsApi = {
 
   duplicateProduct: async (id: string): Promise<Product> => {
     const { data } = await api.post<Product>(`/products/${id}/duplicate`);
+    return data;
+  },
+
+  /** Группы товаров по modelId (связки цветов) для пикера */
+  getModels: async (search?: string): Promise<ProductModel[]> => {
+    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    const { data } = await api.get<ProductModel[]>(`/products/models${params}`);
     return data;
   },
 
