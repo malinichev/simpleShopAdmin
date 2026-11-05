@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Upload } from 'lucide-react';
+import { CloudDownload, Plus, Search, Upload } from 'lucide-react';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -117,6 +117,12 @@ export function ProductsPage() {
         </div>
         <div className="flex items-center gap-2">
           <StockSyncButton />
+          <Button variant="outline" asChild>
+            <Link to={ROUTES.IMPORT_SIMALAND}>
+              <CloudDownload className="h-4 w-4" />
+              Загрузка с Сималенд
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link to={ROUTES.IMPORT_PRODUCTS}>
               <Upload className="h-4 w-4" />

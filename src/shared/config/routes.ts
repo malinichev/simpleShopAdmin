@@ -16,6 +16,7 @@ export const ROUTES = {
   VERIFY_EMAIL: '/verify-email',
   MARKING: '/marking',
   IMPORT_PRODUCTS: '/products/import',
+  IMPORT_SIMALAND: '/products/import/simaland',
   PAGES: '/pages',
   PAGE_EDIT: '/pages/:slug/edit',
 } as const;

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/app/providers';
 import { useAuth } from '@/features/auth';
+import { SimaJobIndicator } from '@/features/import-simaland';
 import { ROUTES } from '@/shared/config';
 import { Breadcrumbs } from './Breadcrumbs';
 
@@ -91,6 +92,9 @@ export function Header() {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
+        {/* Фоновая загрузка с Сималенда (появляется только когда идёт) */}
+        <SimaJobIndicator />
+
         {/* Search shortcut hint */}
         <button
           onClick={() => {

@@ -62,6 +62,9 @@ const BackupsPage = lazy(() =>
 const ImportProductsPage = lazy(() =>
   import('@/pages/import-products').then((m) => ({ default: m.ImportProductsPage })),
 );
+const SimaImportPage = lazy(() =>
+  import('@/pages/import-simaland').then((m) => ({ default: m.SimaImportPage })),
+);
 
 function PageLoader() {
   return (
@@ -91,6 +94,7 @@ export function AppRoutes() {
             <Route path={ROUTES.PROMOTIONS} element={<PromotionsPage />} />
             <Route path={ROUTES.MARKING} element={<MarkingPage />} />
             <Route path={ROUTES.IMPORT_PRODUCTS} element={<ImportProductsPage />} />
+            <Route path={ROUTES.IMPORT_SIMALAND} element={<SimaImportPage />} />
             <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
             <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
             <Route path={ROUTES.BACKUPS} element={<BackupsPage />} />
