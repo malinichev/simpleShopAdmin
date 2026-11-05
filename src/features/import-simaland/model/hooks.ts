@@ -28,7 +28,7 @@ export function useStartSimaImport() {
   const queryClient = useQueryClient();
   return useMutation<SimaJob, Error, { fileKey: string; onlyWomen?: boolean }>({
     mutationFn: simaImportApi.start,
-    onSuccess: (job) => {
+    onSuccess: () => {
       toast.success('Загрузка запущена', {
         description: 'Склейка цветов и зеркалирование картинок идут в фоне',
       });
@@ -41,11 +41,10 @@ export function useStartSimaImport() {
 }
 
 /**
- * Поллинг джобы: 2с пока выполняется. При переходе в завершённое состояние —
- * итоговый toast (виден даже если пользователь ушёл со страницы — хук смонтирован
- * и на странице, и в индикаторе хедера).
+ * Поллинг джобы: 2с пока выполняется. Итоговые toast'ы — в SimaJobIndicator
+ * (смонтирован и на странице, и в хедере — виден при уходе со страницы).
  */
-export function useSimaJob(id: string, notifyOnFinish = false) {
+export function useSimaJob(id: string) {
   return useQuery<SimaJob, Error>({
     queryKey: simaImportKeys.job(id),
     queryFn: () => simaImportApi.getJob(id),
