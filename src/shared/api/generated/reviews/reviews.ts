@@ -34,6 +34,7 @@ import type {
 import type {
   AdminReplyDto,
   CreateReviewDto,
+  ExternalVisibilityDto,
   ReviewEligibilityDto,
   ReviewResponseDto,
   ReviewsControllerFindAll200,
@@ -1061,4 +1062,111 @@ export const useReviewsControllerAddReply = <TError = void,
         TContext
       > => {
       return useMutation(getReviewsControllerAddReplyMutationOptions(options), queryClient);
+    }
+    export type reviewsControllerSetExternalVisibilityResponse200 = {
+  data: ReviewResponseDto
+  status: 200
+}
+
+export type reviewsControllerSetExternalVisibilityResponse404 = {
+  data: void
+  status: 404
+}
+
+export type reviewsControllerSetExternalVisibilityResponseSuccess = (reviewsControllerSetExternalVisibilityResponse200) & {
+  headers: Headers;
+};
+export type reviewsControllerSetExternalVisibilityResponseError = (reviewsControllerSetExternalVisibilityResponse404) & {
+  headers: Headers;
+};
+
+export type reviewsControllerSetExternalVisibilityResponse = (reviewsControllerSetExternalVisibilityResponseSuccess | reviewsControllerSetExternalVisibilityResponseError)
+
+export const getReviewsControllerSetExternalVisibilityUrl = (id: string,) => {
+
+
+
+
+  return `/reviews/external/${id}/visibility`
+}
+
+/**
+ * @summary Скрыть/показать внешний отзыв поставщика (admin)
+ */
+export const reviewsControllerSetExternalVisibility = async (id: string,
+    externalVisibilityDto: ExternalVisibilityDto, options?: Parameters<typeof customInstance>[1]): Promise<reviewsControllerSetExternalVisibilityResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<reviewsControllerSetExternalVisibilityResponse>(getReviewsControllerSetExternalVisibilityUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(externalVisibilityDto)
+  }
+);}
+
+
+
+
+
+export const getReviewsControllerSetExternalVisibilityMutationKey = () => ['reviewsControllerSetExternalVisibility'] as const;
+
+export const getReviewsControllerSetExternalVisibilityMutationOptions = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewsControllerSetExternalVisibility>>, TError,ReviewsControllerSetExternalVisibilityMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewsControllerSetExternalVisibility>>, TError,ReviewsControllerSetExternalVisibilityMutationVariables, TContext> => {
+
+const mutationKey = getReviewsControllerSetExternalVisibilityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewsControllerSetExternalVisibility>>, ReviewsControllerSetExternalVisibilityMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewsControllerSetExternalVisibility(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewsControllerSetExternalVisibilityMutationResult = NonNullable<Awaited<ReturnType<typeof reviewsControllerSetExternalVisibility>>>
+    export type ReviewsControllerSetExternalVisibilityMutationBody = ExternalVisibilityDto
+    export type ReviewsControllerSetExternalVisibilityMutationError = void
+    export type ReviewsControllerSetExternalVisibilityMutationVariables = {id: string;data: ExternalVisibilityDto}
+
+    /**
+ * @summary Скрыть/показать внешний отзыв поставщика (admin)
+ */
+export const useReviewsControllerSetExternalVisibility = <TError = void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewsControllerSetExternalVisibility>>, TError,ReviewsControllerSetExternalVisibilityMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewsControllerSetExternalVisibility>>,
+        TError,
+        ReviewsControllerSetExternalVisibilityMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewsControllerSetExternalVisibilityMutationOptions(options), queryClient);
     }

@@ -30,4 +30,16 @@ export const reviewsApi = {
   deleteReview: async (id: string): Promise<void> => {
     await api.delete(`/reviews/${id}`);
   },
+
+  /** Скрыть/показать внешний отзыв поставщика на витрине. */
+  setReviewVisibility: async (
+    id: string,
+    isHidden: boolean,
+  ): Promise<Review> => {
+    const { data } = await api.patch<Review>(
+      `/reviews/external/${id}/visibility`,
+      { isHidden },
+    );
+    return data;
+  },
 };

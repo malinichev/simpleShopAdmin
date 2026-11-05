@@ -12,18 +12,33 @@
  * https://api.svoybrand.shop/api/openapi.json — точка входа для ИИ-агентов (см. llms.txt).
  * OpenAPI spec version: 1.0
  */
+import type { ReviewResponseDtoSource } from './reviewResponseDtoSource';
 import type { UserBriefDto } from './userBriefDto';
 
 export interface ReviewResponseDto {
   id: string;
   productId: string;
-  userId: string;
+  /** local — покупатель магазина, sima-land — поставщик */
+  source: ReviewResponseDtoSource;
+  /** Только для source=local */
+  userId?: string;
   user?: UserBriefDto;
-  orderId: string;
+  /** Только для source=local */
+  orderId?: string;
+  /** Скрыт ли внешний отзыв с витрины (source=sima-land) */
+  isHidden?: boolean;
   rating: number;
   title?: string;
   text: string;
   images: string[];
+  /** Имя автора (для внешних отзывов) */
+  authorName?: string;
+  /** Достоинства (внешние отзывы) */
+  pros?: string;
+  /** Недостатки (внешние отзывы) */
+  cons?: string;
+  /** Подтверждённая покупка (у своих — заказ, у внешних — поставщик) */
+  isVerifiedPurchase?: boolean;
   isAnonymous: boolean;
   isApproved: boolean;
   adminReply?: string;

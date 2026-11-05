@@ -12,6 +12,7 @@
  * https://api.svoybrand.shop/api/openapi.json — точка входа для ИИ-агентов (см. llms.txt).
  * OpenAPI spec version: 1.0
  */
+import type { ReviewsControllerFindAllSource } from './reviewsControllerFindAllSource';
 
 export type ReviewsControllerFindAllParams = {
 /**
@@ -26,6 +27,10 @@ userId?: string;
  * Filter by approval status
  */
 isApproved?: boolean;
+/**
+ * Filter by source: local — свои отзывы, sima-land — поставщик (по умолчанию все)
+ */
+source?: ReviewsControllerFindAllSource;
 /**
  * Filter by rating (1-5)
  * @minimum 1

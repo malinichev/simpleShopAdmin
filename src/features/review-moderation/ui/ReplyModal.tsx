@@ -26,7 +26,7 @@ export function ReplyModal({
 
   const authorName = review.user
     ? `${review.user.firstName} ${review.user.lastName}`
-    : `User ${review.userId.slice(-6)}`;
+    : `User ${(review.userId ?? '').slice(-6)}`;
 
   const handleSubmit = () => {
     if (!text.trim()) return;

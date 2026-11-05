@@ -1,1 +1,6 @@
-export type { Review, ReviewUser, ReviewQueryParams } from './model/types';
+export type {
+  Review,
+  ReviewUser,
+  ReviewQueryParams,
+  ReviewSource,
+} from './model/types';

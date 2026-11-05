@@ -40,6 +40,7 @@ import type {
   ProductResponseDto,
   ProductsControllerFindAll200,
   ProductsControllerFindAllParams,
+  ProductsControllerFindModelsParams,
   ProductsControllerFindRelatedParams,
   ProductsControllerGetFacetsParams,
   ProductsControllerSearchParams,
@@ -68,6 +69,210 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export type productsControllerDuplicateAsColorResponse201 = {
+  data: ProductResponseDto
+  status: 201
+}
+
+export type productsControllerDuplicateAsColorResponseSuccess = (productsControllerDuplicateAsColorResponse201) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerDuplicateAsColorResponse = (productsControllerDuplicateAsColorResponseSuccess)
+
+export const getProductsControllerDuplicateAsColorUrl = (id: string,) => {
+
+
+
+
+  return `/products/${id}/duplicate`
+}
+
+/**
+ * @summary Дублировать товар как новый цвет той же модели
+ */
+export const productsControllerDuplicateAsColor = async (id: string, options?: Parameters<typeof customInstance>[1]): Promise<productsControllerDuplicateAsColorResponse> => {
+
+  return customInstance<productsControllerDuplicateAsColorResponse>(getProductsControllerDuplicateAsColorUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getProductsControllerDuplicateAsColorMutationKey = () => ['productsControllerDuplicateAsColor'] as const;
+
+export const getProductsControllerDuplicateAsColorMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof productsControllerDuplicateAsColor>>, TError,ProductsControllerDuplicateAsColorMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+): UseMutationOptions<Awaited<ReturnType<typeof productsControllerDuplicateAsColor>>, TError,ProductsControllerDuplicateAsColorMutationVariables, TContext> => {
+
+const mutationKey = getProductsControllerDuplicateAsColorMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof productsControllerDuplicateAsColor>>, ProductsControllerDuplicateAsColorMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  productsControllerDuplicateAsColor(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProductsControllerDuplicateAsColorMutationResult = NonNullable<Awaited<ReturnType<typeof productsControllerDuplicateAsColor>>>
+
+    export type ProductsControllerDuplicateAsColorMutationError = unknown
+    export type ProductsControllerDuplicateAsColorMutationVariables = {id: string}
+
+    /**
+ * @summary Дублировать товар как новый цвет той же модели
+ */
+export const useProductsControllerDuplicateAsColor = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof productsControllerDuplicateAsColor>>, TError,ProductsControllerDuplicateAsColorMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof productsControllerDuplicateAsColor>>,
+        TError,
+        ProductsControllerDuplicateAsColorMutationVariables,
+        TContext
+      > => {
+      return useMutation(getProductsControllerDuplicateAsColorMutationOptions(options), queryClient);
+    }
+    export type productsControllerFindModelsResponse200 = {
+  data: void
+  status: 200
+}
+
+export type productsControllerFindModelsResponseSuccess = (productsControllerFindModelsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productsControllerFindModelsResponse = (productsControllerFindModelsResponseSuccess)
+
+export const getProductsControllerFindModelsUrl = (params?: ProductsControllerFindModelsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/products/models?${stringifiedParams}` : `/products/models`
+}
+
+/**
+ * @summary Группы товаров по modelId (связки цветов)
+ */
+export const productsControllerFindModels = async (params?: ProductsControllerFindModelsParams, options?: Parameters<typeof customInstance>[1]): Promise<productsControllerFindModelsResponse> => {
+
+  return customInstance<productsControllerFindModelsResponse>(getProductsControllerFindModelsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getProductsControllerFindModelsQueryKey = (params?: ProductsControllerFindModelsParams,) => {
+    return [
+    `/products/models`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getProductsControllerFindModelsQueryOptions = <TData = Awaited<ReturnType<typeof productsControllerFindModels>>, TError = unknown>(params?: ProductsControllerFindModelsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFindModels>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getProductsControllerFindModelsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productsControllerFindModels>>> = ({ signal }) => productsControllerFindModels(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productsControllerFindModels>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductsControllerFindModelsQueryResult = NonNullable<Awaited<ReturnType<typeof productsControllerFindModels>>>
+export type ProductsControllerFindModelsQueryError = unknown
+
+
+export function useProductsControllerFindModels<TData = Awaited<ReturnType<typeof productsControllerFindModels>>, TError = unknown>(
+ params: undefined |  ProductsControllerFindModelsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFindModels>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerFindModels>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerFindModels>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerFindModels<TData = Awaited<ReturnType<typeof productsControllerFindModels>>, TError = unknown>(
+ params?: ProductsControllerFindModelsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFindModels>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productsControllerFindModels>>,
+          TError,
+          Awaited<ReturnType<typeof productsControllerFindModels>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductsControllerFindModels<TData = Awaited<ReturnType<typeof productsControllerFindModels>>, TError = unknown>(
+ params?: ProductsControllerFindModelsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFindModels>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Группы товаров по modelId (связки цветов)
+ */
+
+export function useProductsControllerFindModels<TData = Awaited<ReturnType<typeof productsControllerFindModels>>, TError = unknown>(
+ params?: ProductsControllerFindModelsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productsControllerFindModels>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getProductsControllerFindModelsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
 
 export type productsControllerFindAllResponse200 = {
   data: ProductsControllerFindAll200

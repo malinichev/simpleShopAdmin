@@ -48,3 +48,22 @@ export function useDeleteReview() {
     },
   });
 }
+
+/** Скрыть/показать внешний отзыв поставщика на витрине. */
+export function useSetReviewVisibility() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, isHidden }: { id: string; isHidden: boolean }) =>
+      reviewsApi.setReviewVisibility(id, isHidden),
+    onSuccess: (_review, { isHidden }) => {
+      queryClient.invalidateQueries({ queryKey: reviewKeys.lists() });
+      toast.success(
+        isHidden ? 'Отзыв скрыт с витрины' : 'Отзыв показан на витрине',
+      );
+    },
+    onError: () => {
+      toast.error('Не удалось изменить видимость отзыва');
+    },
+  });
+}

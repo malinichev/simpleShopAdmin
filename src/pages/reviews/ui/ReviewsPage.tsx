@@ -7,14 +7,16 @@ import { EmptyState } from '@/shared/ui/empty-state';
 import { Pagination } from '@/shared/ui/pagination';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { DateRangePicker } from '@/shared/ui/date-picker';
-import type { Review, ReviewQueryParams } from '@/entities/review';
+import type { Review, ReviewQueryParams, ReviewSource } from '@/entities/review';
 import {
   useReviews,
   useApproveReview,
   useReplyToReview,
   useDeleteReview,
+  useSetReviewVisibility,
   ReviewCard,
   ReplyModal,
+  ReviewsSyncButton,
 } from '@/features/review-moderation';
 
 const statusOptions = [
@@ -32,10 +34,17 @@ const ratingOptions = [
   { value: '1', label: '1 звезда' },
 ];
 
+const sourceOptions: Array<{ value: '' | ReviewSource; label: string }> = [
+  { value: '', label: 'Все источники' },
+  { value: 'local', label: 'Наш магазин' },
+  { value: 'sima-land', label: 'Поставщик' },
+];
+
 export function ReviewsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [ratingFilter, setRatingFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'' | ReviewSource>('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [replyReview, setReplyReview] = useState<Review | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -43,12 +52,14 @@ export function ReviewsPage() {
   const approveReview = useApproveReview();
   const replyToReview = useReplyToReview();
   const deleteReview = useDeleteReview();
+  const setReviewVisibility = useSetReviewVisibility();
 
   const params: ReviewQueryParams = {
     page,
     limit: 12,
     isApproved: statusFilter === 'approved' ? true : statusFilter === 'pending' ? false : undefined,
     rating: ratingFilter ? Number(ratingFilter) : undefined,
+    source: sourceFilter || undefined,
   };
 
   const { data, isLoading } = useReviews(params);
@@ -79,6 +90,13 @@ export function ReviewsPage() {
     }
   }, [deleteId, deleteReview]);
 
+  const handleToggleVisibility = useCallback(
+    (review: Review) => {
+      setReviewVisibility.mutate({ id: review.id, isHidden: !review.isHidden });
+    },
+    [setReviewVisibility],
+  );
+
   const hasFilters = statusFilter || ratingFilter;
 
   return (
@@ -93,6 +111,13 @@ export function ReviewsPage() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-end gap-3">
+        <Select
+          options={sourceOptions}
+          value={sourceFilter}
+          onChange={(v) => { setSourceFilter(v as '' | ReviewSource); setPage(1); }}
+          placeholder="Источник"
+          className="w-[170px]"
+        />
         <Select
           options={statusOptions}
           value={statusFilter}
@@ -113,6 +138,9 @@ export function ReviewsPage() {
           placeholder="Период"
           className="w-[260px]"
         />
+        <div className="ml-auto">
+          <ReviewsSyncButton />
+        </div>
       </div>
 
       {/* Content */}
@@ -142,6 +170,7 @@ export function ReviewsPage() {
                 onApprove={handleApprove}
                 onReply={handleReply}
                 onDelete={handleDelete}
+                onToggleVisibility={handleToggleVisibility}
               />
             ))}
           </div>
