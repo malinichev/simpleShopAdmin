@@ -62,6 +62,14 @@ export function useSimaJobs(page = 1) {
   return useQuery({
     queryKey: [...simaImportKeys.jobs(), page],
     queryFn: () => simaImportApi.getJobs(page),
+    // пока хоть одна задача активна — список живой (иначе строка «выполняется»
+    // застывает в кэше и выглядит как зависший процесс)
+    refetchInterval: (query) => {
+      const hasActive = (query.state.data?.data ?? []).some(
+        (job) => job.status === 'pending' || job.status === 'processing',
+      );
+      return hasActive ? 3000 : false;
+    },
   });
 }
 
@@ -83,10 +91,14 @@ export function useCancelSimaImport() {
   return useMutation<SimaJob, Error, string>({
     mutationFn: simaImportApi.cancel,
     onSuccess: (job) => {
-      toast.info('Отмена запрошена', {
-        description: 'Задача остановится после текущего блока работ',
-      });
+      if (job.status !== 'canceled') {
+        toast.info('Отмена запрошена', {
+          description: 'Задача остановится после текущего блока работ',
+        });
+      }
       void queryClient.invalidateQueries({ queryKey: simaImportKeys.job(job.id) });
+      void queryClient.invalidateQueries({ queryKey: simaImportKeys.jobs() });
+      void queryClient.invalidateQueries({ queryKey: simaImportKeys.active() });
     },
     onError: (error) =>
       toast.error('Не удалось отменить', { description: error.message }),

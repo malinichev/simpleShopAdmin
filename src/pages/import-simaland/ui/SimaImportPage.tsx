@@ -58,6 +58,8 @@ export function SimaImportPage() {
   const handleSelectJob = (id: string) => {
     setJobId(id);
     setStep('progress');
+    // карточка прогресса рендерится вверху страницы — подтягиваем к ней взгляд
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

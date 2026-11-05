@@ -1,6 +1,8 @@
 import { CheckCircle, XCircle, Loader2, Ban } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/shared/ui/button';
 import type { SimaJob } from '../api/simaImportApi';
-import { useSimaJobs } from '../model/hooks';
+import { useSimaJobs, useCancelSimaImport } from '../model/hooks';
 
 const STATUS_LABEL: Record<SimaJob['status'], string> = {
   pending: 'ожидание',
@@ -16,6 +18,19 @@ export function SimaImportHistory({
   onSelectJob: (id: string) => void;
 }) {
   const { data, isLoading } = useSimaJobs();
+  const cancelMutation = useCancelSimaImport();
+
+  const handleCancel = (job: SimaJob) => {
+    cancelMutation.mutate(job.id, {
+      onSuccess: (updated) => {
+        if (updated.status === 'canceled') {
+          toast.info('Задача отменена', {
+            description: 'Висящая задача остановлена принудительно',
+          });
+        }
+      },
+    });
+  };
 
   if (isLoading) {
     return <p className="text-sm text-gray-500">Загрузка истории…</p>;
@@ -89,13 +104,27 @@ export function SimaImportHistory({
                   {durMs ? `${Math.round(durMs / 60000)} мин` : '—'}
                 </td>
                 <td className="px-2 py-1.5">
-                  <button
-                    type="button"
-                    className="text-xs text-primary-600 hover:underline"
-                    onClick={() => onSelectJob(job.id)}
-                  >
-                    Детали
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {(job.status === 'processing' || job.status === 'pending') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                        loading={cancelMutation.isPending && cancelMutation.variables === job.id}
+                        onClick={() => handleCancel(job)}
+                      >
+                        <Ban className="h-3 w-3" />
+                        Отменить
+                      </Button>
+                    )}
+                    <button
+                      type="button"
+                      className="text-xs text-primary-600 hover:underline"
+                      onClick={() => onSelectJob(job.id)}
+                    >
+                      Детали
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
